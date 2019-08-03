@@ -16,4 +16,8 @@ public class NDPoint {
 		EuclideanDistance s = new EuclideanDistance();
 		return s.compute(p1.coords, p2.coords);
 	}
+	
+	public int getDimensions() {
+		return coords.length;
+	}
 }
