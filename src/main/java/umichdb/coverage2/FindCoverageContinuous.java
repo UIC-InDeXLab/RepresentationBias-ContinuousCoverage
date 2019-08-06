@@ -47,6 +47,9 @@ public class FindCoverageContinuous
 			// hypercube defined by 2d points
 			NDCube newCube = createNDCubeByNDPoints(tempPoints);
 			
+			if (newCube == null) {
+				continue;
+			}
 			
 			// Check if the hypercube is totally empty.
 			Set<Integer> indexSet = new HashSet<Integer>();
@@ -109,6 +112,21 @@ public class FindCoverageContinuous
 				newCube.setMaxValAtDim(d, maxValAtDim);
 			}
 		}
+		
+		// Check if every point is on the edge. If not, this is not a good cube, we ignore it.
+		for (NDPoint p : points) {
+			boolean ifOnEdge = false;
+			for (int d = 0; d < dim; d++) {
+				if (p.valAtNDimension(d) <= newCube.getMinValAtDim(d) || p.valAtNDimension(d) >= newCube.getMaxValAtDim(d)) {
+					ifOnEdge = true;
+					break;
+				}
+			}
+			if (!ifOnEdge) {
+				return null;
+			}
+		}
+		
 		return newCube;
 		
 	}
