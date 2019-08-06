@@ -20,4 +20,8 @@ public class NDPoint {
 	public int getDimensions() {
 		return coords.length;
 	}
+	
+	public double valAtNDimension(int d) {
+		return coords[d];
+	}
 }
