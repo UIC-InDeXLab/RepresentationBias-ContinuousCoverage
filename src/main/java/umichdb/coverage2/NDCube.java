@@ -23,14 +23,32 @@ public class NDCube {
 		return (int) (endPointsNDim.length/2);
 	}
 	
+	public double getMaxValAtDim(int d) {
+		return endPointsNDim[2*d + 1];
+	}
+	
+	public double getMinValAtDim(int d) {
+		return endPointsNDim[2*d];
+	}
+	
+	public boolean contains(NDPoint p) {
+		int dim = p.getDimensions();
+		for (int d = 0; d < dim; d++) {
+			if (p.valAtNDimension(d) <= this.getMinValAtDim(d) || p.valAtNDimension(d) >= this.getMaxValAtDim(d)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
 	@Override
     public String toString() { 
         String s = "";
-        int d = getDimensionality();
-        s += "Dimensions: " + d + "\n";
+        int dim = getDimensionality();
+        s += "Dimensions: " + dim + "\n";
         s += "Volumne: " + getVolume() + "\n";
-        for (int dim = 0; dim < d; dim++) {
-        		s += "\t d" + (dim+1) +": [" + endPointsNDim[2*dim] + "," + endPointsNDim[2*dim + 1] + "]\n";
+        for (int d = 0; d < dim; d++) {
+        		s += "\t d" + (d+1) +": [" + this.getMinValAtDim(d) + "," + this.getMaxValAtDim(d) + "]\n";
         }
         return s;
     }

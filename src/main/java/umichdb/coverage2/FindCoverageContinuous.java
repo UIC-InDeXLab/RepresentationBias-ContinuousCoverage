@@ -2,13 +2,22 @@ package umichdb.coverage2;
 
 import java.util.Random; 
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.commons.math3.util.*;
 
 public class FindCoverageContinuous 
 {
+	/**
+	 * A naive approach discover the uncovered area (N-dimensional cube).
+	 * @param points
+	 * @return
+	 */
 	public static NDCube findMaxVolumeNDCubeNaive(NDPoint[] points) {
 		NDCube NDCubeMaxVolume = null;
 		
@@ -37,7 +46,27 @@ public class FindCoverageContinuous
 			
 			// hypercube defined by 2d points
 			NDCube newCube = createNDCubeByNDPoints(tempPoints);
-			if (NDCubeMaxVolume == null || newCube.getVolume() > NDCubeMaxVolume.getVolume()) {
+			
+			
+			// Check if the hypercube is totally empty.
+			Set<Integer> indexSet = new HashSet<Integer>();
+			for (int idx : indexes) {
+				indexSet.add(idx);
+			}
+			
+			boolean ifEmptyCube = true;
+			for (int i = 0; i < points.length; i++) {
+				if (!indexSet.contains(i)) {
+					NDPoint otherPoint = points[i];
+					if (newCube.contains(otherPoint)) {
+						ifEmptyCube = false;
+						break;
+					}
+				}
+			}
+			
+			// Check if it has max volume
+			if (ifEmptyCube && (NDCubeMaxVolume == null || newCube.getVolume() > NDCubeMaxVolume.getVolume())) {
 				NDCubeMaxVolume = newCube;
 			}
 		}
