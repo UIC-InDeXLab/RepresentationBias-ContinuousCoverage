@@ -24,4 +24,20 @@ public class NDPoint {
 	public double valAtNDimension(int d) {
 		return coords[d];
 	}
+	
+	@Override
+    public String toString() { 
+	  StringBuffer buf = new StringBuffer();
+	    buf.append("(");
+	    for (int i = 0; i < coords.length; i++) {
+	    		if (i < coords.length - 1) {
+	    			buf.append(coords[i] + ",");
+	    		}
+	    		else {
+	    			buf.append(coords[i]);
+	    		}		    		
+	    }
+	    buf.append(")");
+	    return buf.toString();
+	}
 }

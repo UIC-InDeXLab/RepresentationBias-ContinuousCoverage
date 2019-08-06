@@ -3,17 +3,21 @@ package umichdb.coverage2;
 
 public class NDCube {
 	private double[] endPointsNDim;
-	private double volume;
 	
 	public NDCube(double[] endPoins) {
 		endPointsNDim = endPoins;
-		volume = getVolume();
+	}
+	
+	public NDCube(int dim) {
+		endPointsNDim = new double[2*dim];
 	}
 	
 	public double getVolume() {
+		int dim = this.getDimensionality();
 		double volume = 1;
-		for (int i = 0; i < endPointsNDim.length/2; i++) {
-			volume *= endPointsNDim[i+1] - endPointsNDim[i];
+		
+		for (int d = 0; d < dim; d++) {
+			volume *= this.getMaxValAtDim(d) - this.getMinValAtDim(d);
 		}
 		return volume;
 		
@@ -29,6 +33,14 @@ public class NDCube {
 	
 	public double getMinValAtDim(int d) {
 		return endPointsNDim[2*d];
+	}
+	
+	public void setMaxValAtDim(int d, double val) {
+		endPointsNDim[2*d + 1] = val;
+	}
+	
+	public void setMinValAtDim(int d, double val) {
+		endPointsNDim[2*d] = val;
 	}
 	
 	public boolean contains(NDPoint p) {

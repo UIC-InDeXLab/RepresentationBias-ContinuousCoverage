@@ -84,32 +84,32 @@ public class FindCoverageContinuous
 			return null;
 		}
 		
-		int d = points[0].getDimensions();
+		int dim = points[0].getDimensions();
 		
 		// Dimensionality is wrong return null. The number of points != 2^d.
-		if (points.length != (int) 2*d) {
+		if (points.length != (int) 2*dim) {
 			return null;
 		}
 		
-		double[] newNDCubeEndPoints = new double[2*d];
+		NDCube newCube = new NDCube(dim);
 		
-		for (int dim = 0; dim < d; dim++) {
+		for (int d = 0; d < dim; d++) {
 			double maxValAtDim = Double.MIN_VALUE;
 			double minValAtDim = Double.MAX_VALUE;
 			
 			for (NDPoint p : points) {
-				double valAtDim = p.valAtNDimension(dim);
+				double valAtDim = p.valAtNDimension(d);
 				if (valAtDim > maxValAtDim) {
 					maxValAtDim = valAtDim;
 				}
-				else if (valAtDim < minValAtDim) {
+				if (valAtDim < minValAtDim) {
 					minValAtDim = valAtDim;
 				}
-				newNDCubeEndPoints[2*dim] = minValAtDim;
-				newNDCubeEndPoints[2*dim + 1] = maxValAtDim;
+				newCube.setMinValAtDim(d, minValAtDim);
+				newCube.setMaxValAtDim(d, maxValAtDim);
 			}
 		}
-		return new NDCube(newNDCubeEndPoints);
+		return newCube;
 		
 	}
 	
@@ -144,9 +144,13 @@ public class FindCoverageContinuous
     public static void main( String[] args )
     {
     		int n = 20;
-    		int d = 5;
-        System.out.printf( "Create %d cubes of dimension %d \n", n, d );
+    		int d = 2;
+        System.out.printf( "Create %d cubes of dimension %d\n\t", n, d );
         NDPoint[] randPoints = genRandNDPoint(n, d);
+        for (NDPoint p : randPoints) {
+        		System.out.print(p + " ");
+        }
+        System.out.println();
         
         System.out.println( "Start finding coverage cube using the naive approach");
         double beginTime = System.currentTimeMillis();
