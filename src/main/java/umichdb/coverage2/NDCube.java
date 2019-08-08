@@ -1,15 +1,15 @@
 package umichdb.coverage2;
 
+import java.util.Arrays;
 
 public class NDCube {
-	private double[] endPointsNDim;
-	
-	public NDCube(double[] endPoins) {
-		endPointsNDim = endPoins;
-	}
+	private double[] minAtDim;
+	private double[] maxAtDim;
+
 	
 	public NDCube(int dim) {
-		endPointsNDim = new double[2*dim];
+		minAtDim = new double[dim];
+		maxAtDim = new double[dim];
 	}
 	
 	public double getVolume() {
@@ -24,23 +24,23 @@ public class NDCube {
 	}
 	
 	public int getDimensionality() {
-		return (int) (endPointsNDim.length/2);
+		return minAtDim.length;
 	}
 	
 	public double getMaxValAtDim(int d) {
-		return endPointsNDim[2*d + 1];
+		return maxAtDim[d];
 	}
 	
 	public double getMinValAtDim(int d) {
-		return endPointsNDim[2*d];
+		return minAtDim[d];
 	}
 	
 	public void setMaxValAtDim(int d, double val) {
-		endPointsNDim[2*d + 1] = val;
+		maxAtDim[d] = val;
 	}
 	
 	public void setMinValAtDim(int d, double val) {
-		endPointsNDim[2*d] = val;
+		minAtDim[d] = val;
 	}
 	
 	public boolean contains(NDPoint p) {
@@ -63,5 +63,26 @@ public class NDCube {
         		s += "\t d" + (d+1) +": [" + this.getMinValAtDim(d) + "," + this.getMaxValAtDim(d) + "]\n";
         }
         return s;
+    }
+	
+	@Override
+    public boolean equals(Object o) { 
+  
+        // If the object is compared with itself then return true   
+        if (o == this) { 
+            return true; 
+        } 
+  
+        /* Check if o is an instance of Complex or not 
+          "null instanceof [type]" also returns false */
+        if (!(o instanceof NDCube)) { 
+            return false; 
+        } 
+          
+        // typecast o to Complex so that we can compare data members  
+        NDCube otherCube = (NDCube) o; 
+          
+        // Compare the data members and return accordingly  
+        return Arrays.equals(this.minAtDim, otherCube.minAtDim) && Arrays.equals(this.maxAtDim, otherCube.maxAtDim); 
     }
 }

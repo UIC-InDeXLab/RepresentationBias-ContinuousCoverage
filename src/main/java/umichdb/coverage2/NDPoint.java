@@ -1,5 +1,7 @@
 package umichdb.coverage2;
 
+import java.util.Arrays;
+
 import org.apache.commons.math3.ml.distance.EuclideanDistance;
 
 public class NDPoint {
@@ -40,4 +42,25 @@ public class NDPoint {
 	    buf.append(")");
 	    return buf.toString();
 	}
+	
+	@Override
+    public boolean equals(Object o) { 
+  
+        // If the object is compared with itself then return true   
+        if (o == this) { 
+            return true; 
+        } 
+  
+        /* Check if o is an instance of Complex or not 
+          "null instanceof [type]" also returns false */
+        if (!(o instanceof NDPoint)) { 
+            return false; 
+        } 
+          
+        // typecast o to Complex so that we can compare data members  
+        NDPoint otherPoint = (NDPoint) o; 
+          
+        // Compare the data members and return accordingly  
+        return Arrays.equals(this.coords, otherPoint.coords); 
+    } 
 }

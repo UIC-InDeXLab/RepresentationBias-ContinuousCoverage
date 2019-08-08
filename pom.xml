@@ -29,12 +29,13 @@
     <artifactId>commons-math3</artifactId>
     <version>3.6</version>
 </dependency>
-<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-math4 -->
-<!-- <dependency>
-  <groupId>org.apache.commons</groupId>
-  <artifactId>commons-math4</artifactId>
-  <version>4.0-SNAPSHOT</version>
-</dependency> -->
+<!-- https://mvnrepository.com/artifact/jfree/jfreechart -->
+<dependency>
+    <groupId>jfree</groupId>
+    <artifactId>jfreechart</artifactId>
+    <version>1.0.13</version>
+</dependency>
+
 
     
   </dependencies>
