@@ -134,6 +134,11 @@ class Point2D implements Comparable<Point2D> {
 		return 0;
 	}
 
+	@Override
+	public String toString() {
+		return "(" + this.getX() + "," + this.getY() + ")";
+	}
+
 	// the actual information:
 	private double x, y;
 	private boolean inf;

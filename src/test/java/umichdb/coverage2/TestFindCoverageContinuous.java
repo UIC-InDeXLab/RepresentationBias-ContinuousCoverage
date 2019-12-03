@@ -44,10 +44,10 @@ public class TestFindCoverageContinuous {
 	
 	
 	public static void main(String[] args) {
-		int n = 10;
+		int n = 4;
 		int d = 2;
 		double theta = 0.1;
-		int k = 2;
+		int k = 3;
 		
 		System.out.printf("Create %d points of dimension %d\n", n, d);
 		NDPoint[] randPoints = genRandNDPoint(n, d);

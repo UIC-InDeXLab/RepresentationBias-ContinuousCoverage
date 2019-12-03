@@ -1,5 +1,7 @@
 package umichdb.coverage2;
 
+import java.awt.Polygon;
+
 /*
 Higher Order Voronoi Diagrams - Demonstration Applet
 written by Andreas Pollak 2007
@@ -431,11 +433,29 @@ class VVertex extends Point2D implements KCircle {
 		return edgeList;
 	}
 
+	@Override
+	public String toString() {
+		return String.format("[%f,%f]", this.getX(), this.getY());
+	}
+
 	// the private variables:
 	PointSet critical, relevant;
 	boolean relevantInside;
 
 	Vector<VEdge> edgeList;
+}
+
+// A polygon class for Voronoi diagram
+class VoronoiPolygon extends Polygon {
+	Set<Point2D> sites;
+	public VoronoiPolygon() {
+		super();
+		sites = new HashSet<Point2D>();
+	}
+	public VoronoiPolygon(Set<Point2D> points) {
+		super();
+		sites = points;
+	}
 }
 
 // VoronoiKOrder contains the data structures and methods to
@@ -469,6 +489,18 @@ class VVertex extends Point2D implements KCircle {
 // - todo contains edges that have not yet been connected to two vertices; this
 // set only contains objects during the construction of a diagram
 class VoronoiKOrder {
+	// these variables contain all relevant information about the diagram
+	int k;
+	boolean kIsConstant;
+	PointSet S;
+	TreeSet<VEdge> edges;
+	PointSet vertices;
+
+	Set<VoronoiPolygon> polygons;
+
+	// todo is only used during the construction
+	TreeMap<VEdge, VEdge> todo;
+
 	// create an empty diagram:
 	public VoronoiKOrder() {
 		kIsConstant = true;
@@ -478,6 +510,8 @@ class VoronoiKOrder {
 		vertices = new PointSet();
 
 		todo = new TreeMap<VEdge, VEdge>();
+
+		polygons = new HashSet<VoronoiPolygon>();
 	}
 
 	// create diagram for the points in S:
@@ -492,6 +526,8 @@ class VoronoiKOrder {
 		this.S.addAll(S);
 		edges = new TreeSet<VEdge>();
 		vertices = new PointSet();
+
+		polygons = new HashSet<VoronoiPolygon>();
 
 		todo = new TreeMap<VEdge, VEdge>();
 
@@ -1009,13 +1045,4 @@ class VoronoiKOrder {
 		return vertices;
 	}
 
-	// these variables contain all relevant information about the diagram
-	int k;
-	boolean kIsConstant;
-	PointSet S;
-	TreeSet<VEdge> edges;
-	PointSet vertices;
-
-	// todo is only used during the construction
-	TreeMap<VEdge, VEdge> todo;
 }

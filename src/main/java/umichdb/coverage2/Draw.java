@@ -80,6 +80,7 @@ public class Draw extends ApplicationFrame {
 
 	/**
 	 * Draw a Voronoi edge
+	 * 
 	 * @param e
 	 * @return
 	 */
@@ -88,6 +89,8 @@ public class Draw extends ApplicationFrame {
 				i4 = e.v2.getY();
 		double x1, y1, x2, y2;
 
+		int type = 0;
+
 		if (e.v1.isAtInfinity() && e.v2.isAtInfinity()) {
 			double dx = (i2 - i4) * 5000;
 			double dy = (i3 - i1) * 5000;
@@ -95,23 +98,32 @@ public class Draw extends ApplicationFrame {
 			y1 = (i2 + i4) / 2 + dy;
 			x2 = (i1 + i3) / 2 - dx;
 			y2 = (i2 + i4) / 2 - dy;
+			type = 3;
 		} else if (e.v1.isAtInfinity()) {
-			x2 = i1;
-			y2 = i2;
-			x1 = i1 + i3 * 5000;
-			y1 = i2 + i4 * 5000;
+			x1 = i3;
+			y1 = i4;
+			x2 = i3 + i1 * 5000;
+			y2 = i4 + i2 * 5000;
+			type = 2;
 		} else if (e.v2.isAtInfinity()) {
 			x1 = i1;
 			y1 = i2;
 			x2 = i1 + i3 * 5000;
 			y2 = i2 + i4 * 5000;
+			type = 1;
 		} else {
 			// Type 0 in VoroKOrder. Do nothing
 			x1 = i1;
 			y1 = i2;
 			x2 = i3;
 			y2 = i4;
+			type = 0;
 		}
+
+		System.out.println(String.format("edge: (%f, %f)-(%f, %f) ", x1,
+				y1, x2, y2));
+		System.out.println("critical: " + e.critical1 + " " + e.critical2);
+
 		return new XYLineAnnotation(x1, y1, x2, y2, voronoiStroke,
 				voronoiColor);
 	}
