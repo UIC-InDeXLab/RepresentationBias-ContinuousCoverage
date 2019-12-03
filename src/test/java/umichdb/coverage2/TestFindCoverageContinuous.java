@@ -6,6 +6,11 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
+
+import org.jfree.ui.RefineryUtilities;
+
 public class TestFindCoverageContinuous {
 	/**
 	 * Randomly generate n d-dimensional points
@@ -35,18 +40,21 @@ public class TestFindCoverageContinuous {
 
 		return randPoints;
 	}
+	
+	
+	
 	public static void main(String[] args) {
 		int n = 10;
 		int d = 2;
 		double theta = 0.1;
-		int k = 1;
+		int k = 2;
 		
-		System.out.printf("Create %d cubes of dimension %d\n\t", n, d);
+		System.out.printf("Create %d points of dimension %d\n", n, d);
 		NDPoint[] randPoints = genRandNDPoint(n, d);
-		for (NDPoint p : randPoints) {
-			System.out.print(p + " ");
+		for (int i = 0; i <  Math.min(randPoints.length, 10); i++) {
+			System.out.println("\t" + randPoints[i]);
 		}
-		System.out.println();
+		System.out.println("\t...");
 
 		System.out.println(
 				"Start finding coverage cube using the naive approach");
@@ -57,8 +65,8 @@ public class TestFindCoverageContinuous {
 		
 		
 		System.out.println("Cube found!");
-		System.out.printf("Search time: %f ms", endTime - beginTime);
+		System.out.printf("Search time: %f ms\n", endTime - beginTime);
 		
-		CoverageViewer v = new CoverageViewer(cc);
+		cc.view();
 	}
 }

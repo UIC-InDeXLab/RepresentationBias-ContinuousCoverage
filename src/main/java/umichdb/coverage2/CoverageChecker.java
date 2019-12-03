@@ -15,7 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.math3.util.*;
-
+import org.jfree.ui.RefineryUtilities;
 
 public class CoverageChecker {
 	VoronoiKOrder vd;
@@ -23,25 +23,35 @@ public class CoverageChecker {
 	int d;
 	int k;
 	double theta;
-	
+
 	public CoverageChecker(NDPoint[] points, int k, double theta) {
 		this.sites = points;
 		this.k = k;
 		this.theta = theta;
 		this.d = points[0].getDimensions();
-		
+
 		findVoronoi();
 	}
-	
+
 	private void findVoronoi() {
 		List<Point2D> point2dList = new ArrayList<Point2D>();
 		for (NDPoint p : sites) {
-			Point2D newP = new Point2D(p.valAtNDimension(0), p.valAtNDimension(1));
+			Point2D newP = new Point2D(p.valAtNDimension(0),
+					p.valAtNDimension(1));
 			point2dList.add(newP);
 		}
 		this.vd = new VoronoiKOrder(point2dList, k, false);
 	}
-	
+
+	public void view() {
+		Draw chart = new Draw("Find uncovered space for " + sites.length
+				+ " random points in " + sites[0].getDimensions() + "-d space.",
+				sites, theta, vd);
+		chart.pack();
+		RefineryUtilities.centerFrameOnScreen(chart);
+		chart.setSize(800, 800);
+		chart.setVisible(true);
+	}
 
 	public static void main(String[] args) {
 
