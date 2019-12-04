@@ -446,15 +446,19 @@ class VVertex extends Point2D implements KCircle {
 }
 
 // A polygon class for Voronoi diagram
-class VoronoiPolygon extends Polygon {
-	Set<Point2D> sites;
+class VoronoiPolygon extends Polygon2D {
+	PointSet regionKey;
 	public VoronoiPolygon() {
 		super();
-		sites = new HashSet<Point2D>();
+		regionKey = new PointSet();
 	}
-	public VoronoiPolygon(Set<Point2D> points) {
+	public VoronoiPolygon(PointSet points) {
 		super();
-		sites = points;
+		regionKey = points;
+	}
+
+	public String toString() {
+		return "Key: " + regionKey + " Vertex: " + super.toString();
 	}
 }
 
@@ -496,7 +500,7 @@ class VoronoiKOrder {
 	TreeSet<VEdge> edges;
 	PointSet vertices;
 
-	Set<VoronoiPolygon> polygons;
+	HashMap<PointSet, VoronoiPolygon> polygonKeyToPolygon;
 
 	// todo is only used during the construction
 	TreeMap<VEdge, VEdge> todo;
@@ -511,7 +515,7 @@ class VoronoiKOrder {
 
 		todo = new TreeMap<VEdge, VEdge>();
 
-		polygons = new HashSet<VoronoiPolygon>();
+		polygonKeyToPolygon = new HashMap<PointSet, VoronoiPolygon>();
 	}
 
 	// create diagram for the points in S:
@@ -527,7 +531,7 @@ class VoronoiKOrder {
 		edges = new TreeSet<VEdge>();
 		vertices = new PointSet();
 
-		polygons = new HashSet<VoronoiPolygon>();
+		polygonKeyToPolygon = new HashMap<PointSet, VoronoiPolygon>();
 
 		todo = new TreeMap<VEdge, VEdge>();
 
@@ -1024,6 +1028,106 @@ class VoronoiKOrder {
 		edges.clear();
 		vertices.clear();
 		createGraph();
+	}
+
+	/**
+	 * Discover all polygons in the Voronoi graph
+	 */
+	void findPolygons() {
+		if (this.polygonKeyToPolygon.isEmpty()) {
+			HashMap<PointSet, Set<Point2D>> tempPolyVertex = new HashMap<PointSet,Set<Point2D>>();
+
+			for (VEdge e : this.edges) {
+				double i1 = e.v1.getX(), i2 = e.v1.getY(), i3 = e.v2.getX(),
+						i4 = e.v2.getY();
+				double x1 = i1, y1=i2, x2=i3, y2=i4;
+
+				if (e.v1.isAtInfinity() && e.v2.isAtInfinity()) {
+					double dx = (i2 - i4) * 5000;
+					double dy = (i3 - i1) * 5000;
+					x1 = (i1 + i3) / 2 + dx;
+					y1 = (i2 + i4) / 2 + dy;
+					x2 = (i1 + i3) / 2 - dx;
+					y2 = (i2 + i4) / 2 - dy;
+				} else if (e.v1.isAtInfinity()) {
+					x1 = i3;
+					y1 = i4;
+					x2 = i3 + i1 * 5000;
+					y2 = i4 + i2 * 5000;
+				} else if (e.v2.isAtInfinity()) {
+					x1 = i1;
+					y1 = i2;
+					x2 = i1 + i3 * 5000;
+					y2 = i2 + i4 * 5000;
+				} else {
+					x1 = i1;
+					y1 = i2;
+					x2 = i3;
+					y2 = i4;
+				}
+
+				PointSet polygon1Key = new PointSet();
+				polygon1Key.add(e.critical1);
+				polygon1Key.addAll(e.relevant);
+				Set<Point2D> poly1 = tempPolyVertex.getOrDefault(
+						polygon1Key, new HashSet<Point2D>());
+
+				poly1.add(new Point2D(x1, y1));
+				poly1.add(new Point2D(x2, y2));
+				tempPolyVertex.put(polygon1Key, poly1);
+
+				PointSet polygon2Key = new PointSet();
+				polygon2Key.add(e.critical2);
+				polygon2Key.addAll(e.relevant);
+				Set<Point2D> poly2 = tempPolyVertex.getOrDefault(
+						polygon2Key, new HashSet<Point2D>());
+				poly2.add(new Point2D(x1, y1));
+				poly2.add(new Point2D(x2, y2));
+				tempPolyVertex.put(polygon2Key, poly2);
+			}		
+			
+			// Add polygons
+			for (Map.Entry<PointSet, Set<Point2D>> e : tempPolyVertex.entrySet()) {
+				VoronoiPolygon poly = new VoronoiPolygon(e.getKey());
+				List<Point2D> vertices = new ArrayList<Point2D>(e.getValue());
+				// Sort vertices clockwise
+				double xMean = vertices.stream().mapToDouble(v -> v.getX()).average().orElse(0);
+				double yMean = vertices.stream().mapToDouble(v -> v.getY()).average().orElse(0);
+				Point2D center = new Point2D(xMean, yMean);
+				
+				Collections.sort(vertices, (a, b) -> {
+		    
+				    double angle0 = angleToX(
+		                    center.getX(), center.getY(), a.getX(), a.getY());
+		                double angle1 = angleToX(
+		                    center.getX(), center.getY(), b.getX(), b.getY());
+		                return Double.compare(angle1, angle0);
+				});				
+				// Sort vertices (end)
+				vertices.stream().forEach(v -> poly.addPoint(v.getX(), v.getY()));
+				this.polygonKeyToPolygon.put(e.getKey(), poly);
+			}
+		}
+	}
+	
+	
+	private static double angleToX(
+	        double x0, double y0, double x1, double y1)
+	    {
+	        double dx = x1 - x0;
+	        double dy = y1 - y0;
+	        double angleRad = Math.atan2(dy, dx); 
+	        return angleRad;
+	    }
+
+	/**
+	 * Get all polygons in this Voronoi diagram
+	 * 
+	 * @return
+	 */
+	public Collection<VoronoiPolygon> getPolygons() {
+		findPolygons();
+		return this.polygonKeyToPolygon.values();
 	}
 
 	// return the size of S and the order k

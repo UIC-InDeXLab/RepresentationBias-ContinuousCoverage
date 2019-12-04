@@ -11,7 +11,9 @@ import javax.swing.WindowConstants;
 
 import org.jfree.ui.RefineryUtilities;
 
-public class TestFindCoverageContinuous {
+public class TestCoverageChecker {
+	
+	final static long seed = 10;
 	/**
 	 * Randomly generate n d-dimensional points
 	 * 
@@ -21,6 +23,8 @@ public class TestFindCoverageContinuous {
 	 */
 	public static NDPoint[] genRandNDPoint(int n, int d) {
 		Random rand = new Random();
+		
+		rand.setSeed(seed);
 
 		NDPoint[] randPoints = new NDPoint[n];
 		Set<NDPoint> existingNDpoints = new HashSet<NDPoint>();
@@ -44,10 +48,10 @@ public class TestFindCoverageContinuous {
 	
 	
 	public static void main(String[] args) {
-		int n = 4;
+		int n = 20;
 		int d = 2;
 		double theta = 0.1;
-		int k = 3;
+		int k = 2;
 		
 		System.out.printf("Create %d points of dimension %d\n", n, d);
 		NDPoint[] randPoints = genRandNDPoint(n, d);
@@ -57,16 +61,16 @@ public class TestFindCoverageContinuous {
 		System.out.println("\t...");
 
 		System.out.println(
-				"Start finding coverage cube using the naive approach");
+				"Start building coverage graph");
 
 		double beginTime = System.currentTimeMillis();
 		CoverageChecker cc = new CoverageChecker(randPoints, k, theta);
 		double endTime = System.currentTimeMillis();
 		
-		
-		System.out.println("Cube found!");
-		System.out.printf("Search time: %f ms\n", endTime - beginTime);
-		
-		cc.view();
+
+		System.out.printf("Coverage discovery time: %f ms\n", endTime - beginTime);
+				
+		CoverageChecker.view(cc);
+
 	}
 }

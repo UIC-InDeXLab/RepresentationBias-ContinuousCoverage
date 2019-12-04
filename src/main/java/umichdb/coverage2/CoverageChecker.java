@@ -43,14 +43,43 @@ public class CoverageChecker {
 		this.vd = new VoronoiKOrder(point2dList, k, false);
 	}
 
-	public void view() {
-		Draw chart = new Draw("Find uncovered space for " + sites.length
-				+ " random points in " + sites[0].getDimensions() + "-d space.",
-				sites, theta, vd);
+	public static void view(CoverageChecker cc) {
+		CoverageCheckerUI chart = new CoverageCheckerUI(
+				String.format(
+						"Coverage for %d random points in %d-d space. (k=%d, theta=%.2f)",
+						cc.sites.length, cc.sites[0].getDimensions(), cc.k, cc.theta),
+				cc);
 		chart.pack();
 		RefineryUtilities.centerFrameOnScreen(chart);
 		chart.setSize(800, 800);
 		chart.setVisible(true);
+	}
+
+	/**
+	 * Check if point (x,y) is covered
+	 * 
+	 * @param x
+	 * @param y
+	 * @return
+	 */
+	public boolean ifCovered(double x, double y) {
+		PointSet sites = getContainingVoronoiPolyKey(x, y);
+		if (sites == null)
+			return false;
+		
+		return sites.stream()
+				.mapToInt(p -> (p.dist2(new Point2D(x, y)) <= theta*theta) ? 1 : 0)
+				.sum() >= k;
+	}
+
+	public PointSet getContainingVoronoiPolyKey(double x, double y) {
+		for (VoronoiPolygon p : vd.getPolygons()) {
+			if (p.contains(x, y))
+				return p.regionKey;
+		}
+		
+		System.out.println(String.format("ERROR: (%.2f,%.2f) is not found in any voronoi polygon", x, y));
+		return null;
 	}
 
 	public static void main(String[] args) {

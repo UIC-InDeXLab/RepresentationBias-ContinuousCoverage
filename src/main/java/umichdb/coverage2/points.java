@@ -136,7 +136,7 @@ class Point2D implements Comparable<Point2D> {
 
 	@Override
 	public String toString() {
-		return "(" + this.getX() + "," + this.getY() + ")";
+		return "(" + String.format("%.2f", this.getX())  + "," + String.format("%.2f", this.getY()) + ")";
 	}
 
 	// the actual information:

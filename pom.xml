@@ -29,14 +29,39 @@
     <artifactId>commons-math3</artifactId>
     <version>3.6</version>
 </dependency>
-<!-- https://mvnrepository.com/artifact/jfree/jfreechart -->
+<!-- https://mvnrepository.com/artifact/org.jfree/jfreechart -->
 <dependency>
-    <groupId>jfree</groupId>
+    <groupId>org.jfree</groupId>
     <artifactId>jfreechart</artifactId>
-    <version>1.0.13</version>
+    <version>1.0.19</version>
 </dependency>
-
-
-    
   </dependencies>
+
+<build>
+    <plugins>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.6.0</version>
+<executions>
+          <execution>
+            <id>demo</id>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <mainClass>umichdb.coverage2.TestCoverageChecker</mainClass>
+              <classpathScope>test</classpathScope>
+              <cleanupDaemonThreads>false</cleanupDaemonThreads>
+              <argLine>-Xmx8G</argLine>
+              <argLine>-Xms4G</argLine>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+    </build>
+    
+
 </project>
