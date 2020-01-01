@@ -23,6 +23,7 @@ public class CoverageChecker {
 	int d;
 	int k;
 	double theta;
+	
 
 	public CoverageChecker(NDPoint[] points, int k, double theta) {
 		this.sites = points;
@@ -36,19 +37,21 @@ public class CoverageChecker {
 	private void findVoronoi() {
 		List<Point2D> point2dList = new ArrayList<Point2D>();
 		for (NDPoint p : sites) {
-			Point2D newP = new Point2D(p.valAtNDimension(0),
-					p.valAtNDimension(1));
+			Point2D newP = new Point2D(p.getValueAt(0),
+					p.getValueAt(1));
 			point2dList.add(newP);
 		}
 		this.vd = new VoronoiKOrder(point2dList, k, false);
 	}
+	
+	
 
-	public static void view(CoverageChecker cc) {
+	public static void view(CoverageChecker cc, double delta, int sampleSize, boolean allowInteractive) {
 		CoverageCheckerUI chart = new CoverageCheckerUI(
 				String.format(
 						"Coverage for %d random points in %d-d space. (k=%d, theta=%.2f)",
 						cc.sites.length, cc.sites[0].getDimensions(), cc.k, cc.theta),
-				cc);
+				cc, delta, sampleSize, allowInteractive);
 		chart.pack();
 		RefineryUtilities.centerFrameOnScreen(chart);
 		chart.setSize(800, 800);

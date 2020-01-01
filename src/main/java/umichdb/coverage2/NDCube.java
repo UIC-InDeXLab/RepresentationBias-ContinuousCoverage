@@ -46,7 +46,7 @@ public class NDCube {
 	public boolean contains(NDPoint p) {
 		int dim = p.getDimensions();
 		for (int d = 0; d < dim; d++) {
-			if (p.valAtNDimension(d) <= this.getMinValAtDim(d) || p.valAtNDimension(d) >= this.getMaxValAtDim(d)) {
+			if (p.getValueAt(d) <= this.getMinValAtDim(d) || p.getValueAt(d) >= this.getMaxValAtDim(d)) {
 				return false;
 			}
 		}

@@ -23,7 +23,7 @@ public class NDPoint {
 		return coords.length;
 	}
 	
-	public double valAtNDimension(int d) {
+	public double getValueAt(int d) {
 		return coords[d];
 	}
 	

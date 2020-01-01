@@ -48,10 +48,11 @@ public class TestCoverageChecker {
 	
 	
 	public static void main(String[] args) {
-		int n = 20;
+		int n = 100;
 		int d = 2;
 		double theta = 0.1;
 		int k = 2;
+		double delta = 0.005;
 		
 		System.out.printf("Create %d points of dimension %d\n", n, d);
 		NDPoint[] randPoints = genRandNDPoint(n, d);
@@ -70,7 +71,7 @@ public class TestCoverageChecker {
 
 		System.out.printf("Coverage discovery time: %f ms\n", endTime - beginTime);
 				
-		CoverageChecker.view(cc);
+		CoverageChecker.view(cc, delta, 1000, true);
 
 	}
 }

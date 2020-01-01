@@ -6,7 +6,10 @@ import java.awt.Font;
 import java.awt.Stroke;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import javax.swing.JFrame;
@@ -35,15 +38,20 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.RectangleEdge;
+import org.apache.commons.math3.ml.clustering.CentroidCluster;
+import org.apache.commons.math3.ml.clustering.Cluster;
+import org.apache.commons.math3.ml.clustering.DBSCANClusterer;
+import org.apache.commons.math3.ml.clustering.DoublePoint;
 
 public class CoverageCheckerUI extends ApplicationFrame {
 	private static final long serialVersionUID = 6294689542092367723L;
 
 	private final Color backgroundColor = new Color(255, 228, 196);
 	private final Color siteColor = Color.BLACK;
-	private final Color circleColor = Color.RED;
-	private final Color voronoiColor = Color.BLUE;
-	private final Color polyColor = Color.GREEN;
+	private final Color circleColor = Color.GRAY;
+	private final Color voronoiColor = Color.GRAY;
+	private final Color coveredColor = Color.GREEN;
+	private final Color uncoveredColor = Color.RED;
 
 	private final Stroke circleStroke = new BasicStroke();
 	private final Stroke voronoiStroke = new BasicStroke();
@@ -53,12 +61,15 @@ public class CoverageCheckerUI extends ApplicationFrame {
 
 	private double minRange = 0.0;
 	private double maxRange = 1.0;
-	
+
+	static final int seed = 19;
+
 	private CoverageChecker cc;
 
-	public CoverageCheckerUI(String title, CoverageChecker cc) {
+	public CoverageCheckerUI(String title, CoverageChecker cc, double delta,
+			int sampleSize, boolean allowInteractive) {
 		super(title);
-		
+
 		title = String.format(
 				"Coverage for %d random points in %d-d space. (k=%d, theta=%.2f)",
 				cc.sites.length, cc.sites[0].getDimensions(), cc.k, cc.theta);
@@ -66,7 +77,6 @@ public class CoverageCheckerUI extends ApplicationFrame {
 		double radius = cc.theta;
 		VoronoiKOrder v = cc.vd;
 		this.cc = cc;
-		
 
 		// Create dataset
 		XYDataset pointsSet = createPointDataset(points);
@@ -88,98 +98,167 @@ public class CoverageCheckerUI extends ApplicationFrame {
 		domainAxis.setRange(minRange, maxRange);
 		rangeAxis.setRange(minRange, maxRange);
 
-//		// Add site labels
-//		for (NDPoint p : points) {
-//			plot.addAnnotation(
-//					new XYShapeAnnotation(
-//							new Ellipse2D.Double(p.valAtNDimension(0) - radius,
-//									p.valAtNDimension(1) - radius,
-//									radius + radius, radius + radius),
-//							circleStroke, this.circleColor));
-//
-//			Point2D pp = new Point2D(p.valAtNDimension(0),
-//					p.valAtNDimension(1));
-//			XYTextAnnotation label = new XYTextAnnotation(pp.toString(),
-//					p.valAtNDimension(0), p.valAtNDimension(1) + 0.01);
-//			plot.addAnnotation(label);
-//		}
-
 		// Add circles
 		for (NDPoint p : points) {
 			plot.addAnnotation(
 					new XYShapeAnnotation(
-							new Ellipse2D.Double(p.valAtNDimension(0) - radius,
-									p.valAtNDimension(1) - radius,
-									radius + radius, radius + radius),
+							new Ellipse2D.Double(p.getValueAt(0) - radius,
+									p.getValueAt(1) - radius, radius + radius,
+									radius + radius),
 							circleStroke, this.circleColor));
 		}
 
 		// Add Voronoi edges
 		v.getEdges().stream().forEach(e -> {
 			XYLineAnnotation edge = getVoronoiEdge(e);
-			Point2D labelLoc = getEdgeLabelLocation(e);
 			plot.addAnnotation(edge);
 		});
 
-//		// Label Voronoi polygons
-//		v.getPolygons().forEach(poly -> {
-//			double xMean = poly.regionKey.stream().mapToDouble(p -> p.getX())
-//					.average().orElse(0);
-//			double yMean = poly.regionKey.stream().mapToDouble(p -> p.getY())
-//					.average().orElse(0);
-//
-//			XYTextAnnotation label = new XYTextAnnotation(
-//					"Order-" + v.k + " vCell: " + poly.regionKey.toString(),
-//					xMean, yMean);
-//			plot.addAnnotation(label);
-//		});
+		// Add covered/uncovered points
+		if (sampleSize < 0) {
+			for (double x = 0; x <= 1; x += delta) {
+				for (double y = 0; y <= 1; y += delta) {
+					if (cc.ifCovered(x, y)) {
+						plot.addAnnotation(new XYShapeAnnotation(
+								new Ellipse2D.Double(x, y, delta / 5,
+										delta / 5),
+								circleStroke, this.coveredColor,
+								this.coveredColor));
+					} else {
+						plot.addAnnotation(new XYShapeAnnotation(
+								new Ellipse2D.Double(x, y, delta / 5,
+										delta / 5),
+								circleStroke, this.uncoveredColor,
+								this.uncoveredColor));
+					}
+
+				}
+			}
+		} else {
+			// Get "sampleSize" number of random uncovered points
+			List<NDPoint> randUncoveredPoints = sampleUncoveredPoints(cc,
+					sampleSize, cc.d);
+
+			List<DoublePoint> randUncoveredDPs = randUncoveredPoints.stream()
+					.map(p -> new DoublePoint(
+							new double[]{p.getValueAt(0), p.getValueAt(1)}))
+					.collect(Collectors.toList());
+
+			// Cluster these points using DBSCAN clustering algorithm
+			DBSCANClusterer s = new DBSCANClusterer<DoublePoint>(0.1, 10);
+			List<Cluster> clusters = s.cluster(randUncoveredDPs);
+
+			List<Color> clusterColors = getRandomColors(clusters.size());
+
+			for (int i = 0; i < clusters.size(); i++) {
+
+				// Plot all points by cluster
+				Cluster<DoublePoint> c = clusters.get(i);
+				for (DoublePoint point : c.getPoints()) {
+					plot.addAnnotation(new XYShapeAnnotation(
+							new Ellipse2D.Double(point.getPoint()[0],
+									point.getPoint()[1], 0.005, 0.005),
+							circleStroke, clusterColors.get(i),
+							clusterColors.get(i)));
+				}
+
+				// Plot centroid of each cluster
+				double x = c.getPoints().stream()
+						.mapToDouble(p -> p.getPoint()[0]).average()
+						.orElse(Double.NaN);
+				double y = c.getPoints().stream()
+						.mapToDouble(p -> p.getPoint()[1]).average()
+						.orElse(Double.NaN);
+				plot.addAnnotation(new XYBoxAnnotation(x - 0.01, y - 0.01, x + 0.01, y + 0.01, circleStroke,
+						clusterColors.get(i), clusterColors.get(i)));
+
+			}
+
+		}
 
 		// Create Panel
 		ChartPanel panel = new ChartPanel(chart);
 
 		// Add moust event listener
-		panel.addChartMouseListener(new ChartMouseListener() {
-			@Override
-			public void chartMouseClicked(ChartMouseEvent cme) {
-				report(cme);
-			}
+		if (allowInteractive) {
+			panel.addChartMouseListener(new ChartMouseListener() {
+				@Override
+				public void chartMouseClicked(ChartMouseEvent cme) {
+					report(cme);
+				}
 
-			@Override
-			public void chartMouseMoved(ChartMouseEvent cme) {
-				// report(cme);
-			}
+				@Override
+				public void chartMouseMoved(ChartMouseEvent cme) {
+					// report(cme);
+				}
 
-			private void report(ChartMouseEvent cme) {
-				 Rectangle2D dataArea = panel.getScreenDataArea();
-			        JFreeChart chart = cme.getChart();
-			        XYPlot plot = (XYPlot) chart.getPlot();
-			        ValueAxis xAxis = plot.getDomainAxis();
-			        double x = xAxis.java2DToValue(cme.getTrigger().getX(), dataArea, 
-			                RectangleEdge.BOTTOM);
-			        
-			        ValueAxis yAxis = plot.getRangeAxis();
-			        double y = yAxis.java2DToValue(cme.getTrigger().getY(), dataArea, 
-			                RectangleEdge.LEFT );
-			        System.out.println("Click on "+ new Point2D(x,y) + ". If covered: " +cc.ifCovered(x, y));
-			}
-		});
+				private void report(ChartMouseEvent cme) {
+					Rectangle2D dataArea = panel.getScreenDataArea();
+					JFreeChart chart = cme.getChart();
+					XYPlot plot = (XYPlot) chart.getPlot();
+					ValueAxis xAxis = plot.getDomainAxis();
+					double x = xAxis.java2DToValue(cme.getTrigger().getX(),
+							dataArea, RectangleEdge.BOTTOM);
+
+					ValueAxis yAxis = plot.getRangeAxis();
+					double y = yAxis.java2DToValue(cme.getTrigger().getY(),
+							dataArea, RectangleEdge.LEFT);
+					System.out.println("Click on " + new Point2D(x, y)
+							+ ". If covered: " + cc.ifCovered(x, y));
+				}
+			});
+		}
 
 		setContentPane(panel);
 	}
 
 	/**
-	 * Draw polygon
+	 * Get a random color
 	 * 
-	 * @param vp
 	 * @return
 	 */
-	private XYPolygonAnnotation getVoronoiPolygon(VoronoiPolygon vp) {
-		double[] polyVertex = new double[vp.npoints * 2];
-		for (int i = 0; i < vp.npoints; i++) {
-			polyVertex[i * 2] = vp.xpoints[i];
-			polyVertex[i * 2 + 1] = vp.ypoints[i];
+	private static List<Color> getRandomColors(int num) {
+		Random randomGenerator = new Random();
+		List<Color> colors = new ArrayList<Color>();
+		randomGenerator.setSeed(seed - 1);
+		for (int i = 0; i < num; i++) {
+			int red = randomGenerator.nextInt(200) + 25;
+			int green = randomGenerator.nextInt(200) + 25;
+			int blue = randomGenerator.nextInt(200) + 25;
+			colors.add(new Color(red, green, blue));
 		}
-		return new XYPolygonAnnotation(polyVertex, polyStroke, polyColor);
+
+		return colors;
+	}
+
+	/**
+	 * Sample uncovered points
+	 * 
+	 * @param cc
+	 * @param sampleSize
+	 * @param d
+	 * @return
+	 */
+	private static List<NDPoint> sampleUncoveredPoints(CoverageChecker cc,
+			int sampleSize, int d) {
+		Random rand = new Random();
+		rand.setSeed(seed);
+
+		List<NDPoint> uncoveredPoints = new ArrayList<NDPoint>();
+		while (uncoveredPoints.size() < sampleSize) {
+			double[] coords = new double[d];
+			for (int dim = 0; dim < d; dim++) {
+				coords[dim] = rand.nextDouble();
+			}
+
+			NDPoint newPoint = new NDPoint(coords);
+			if (!uncoveredPoints.contains(newPoint)
+					&& !cc.ifCovered(newPoint.getValueAt(0),
+							newPoint.getValueAt(1))) {
+				uncoveredPoints.add(newPoint);
+			}
+		}
+		return uncoveredPoints;
 	}
 
 	/**
@@ -279,7 +358,7 @@ public class CoverageCheckerUI extends ApplicationFrame {
 		// Boys (Age,weight) series
 		XYSeries series1 = new XYSeries("NDPoints");
 		for (NDPoint p : points) {
-			series1.add(p.valAtNDimension(0), p.valAtNDimension(1));
+			series1.add(p.getValueAt(0), p.getValueAt(1));
 		}
 		dataset.addSeries(series1);
 
