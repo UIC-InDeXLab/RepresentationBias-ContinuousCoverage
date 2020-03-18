@@ -1,6 +1,7 @@
 package umichdb.coverage2;
 
 import java.util.ArrayList;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -13,37 +14,8 @@ import org.jfree.ui.RefineryUtilities;
 
 public class TestCoverageChecker {
 	
-	final static long seed = 10;
-	/**
-	 * Randomly generate n d-dimensional points
-	 * 
-	 * @param n
-	 * @param d
-	 * @return
-	 */
-	public static NDPoint[] genRandNDPoint(int n, int d) {
-		Random rand = new Random();
-		
-		rand.setSeed(seed);
-
-		NDPoint[] randPoints = new NDPoint[n];
-		Set<NDPoint> existingNDpoints = new HashSet<NDPoint>();
-
-		for (int i = 0; i < n; i++) {
-			double[] coords = new double[d];
-			for (int dim = 0; dim < d; dim++) {
-				coords[dim] = rand.nextDouble();
-			}
-
-			NDPoint newPoint = new NDPoint(coords);
-			if (!existingNDpoints.contains(newPoint)) {
-				randPoints[i] = newPoint;
-				existingNDpoints.add(newPoint);
-			}
-		}
-
-		return randPoints;
-	}
+	
+	
 	
 	
 	
@@ -55,7 +27,7 @@ public class TestCoverageChecker {
 		double delta = 0.005;
 		
 		System.out.printf("Create %d points of dimension %d\n", n, d);
-		NDPoint[] randPoints = genRandNDPoint(n, d);
+		NDPoint[] randPoints = Utils.genRandNDPoint(n, d);
 		for (int i = 0; i <  Math.min(randPoints.length, 10); i++) {
 			System.out.println("\t" + randPoints[i]);
 		}
@@ -71,7 +43,7 @@ public class TestCoverageChecker {
 
 		System.out.printf("Coverage discovery time: %f ms\n", endTime - beginTime);
 				
-		CoverageChecker.view(cc, delta, 1000, true);
+		CoverageChecker.View(cc, delta, 1000, true);
 
 	}
 }
