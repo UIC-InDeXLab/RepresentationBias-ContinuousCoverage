@@ -35,6 +35,11 @@
     <artifactId>jfreechart</artifactId>
     <version>1.0.19</version>
 </dependency>
+<dependency>
+      <groupId>com.github.haifengl</groupId>
+      <artifactId>smile-core</artifactId>
+      <version>2.2.2</version>
+    </dependency>
   </dependencies>
 
 <build>

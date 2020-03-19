@@ -38,13 +38,18 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.RectangleEdge;
+
+import smile.data.DataFrame;
+import smile.data.Tuple;
+import smile.data.vector.BaseVector;
+
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import org.apache.commons.math3.ml.clustering.Cluster;
 import org.apache.commons.math3.ml.clustering.DBSCANClusterer;
 import org.apache.commons.math3.ml.clustering.DoublePoint;
 
 public class CoverageCheckerUI extends ApplicationFrame {
-	private static final long serialVersionUID = 6294689542092367723L;
+	private static final long serialVersionUID = 1L;
 
 	private final Color backgroundColor = new Color(255, 228, 196);
 	private final Color siteColor = Color.BLACK;
@@ -72,8 +77,8 @@ public class CoverageCheckerUI extends ApplicationFrame {
 
 		title = String.format(
 				"Coverage for %d random points in %d-d space. (k=%d, theta=%.2f)",
-				cc.sites.length, cc.sites[0].getDimensions(), cc.k, cc.theta);
-		NDPoint[] points = cc.sites;
+				cc.sites.nrows(), cc.sites.ncols(), cc.k, cc.theta);
+		DataFrame points = cc.sites;
 		double radius = cc.theta;
 		VoronoiKOrder v = cc.vd;
 		this.cc = cc;
@@ -99,20 +104,23 @@ public class CoverageCheckerUI extends ApplicationFrame {
 		rangeAxis.setRange(minRange, maxRange);
 
 		// Add circles
-		for (NDPoint p : points) {
+		for (int i = 0; i < points.size(); i++) {
+			Tuple r = points.get(i);
 			plot.addAnnotation(
 					new XYShapeAnnotation(
-							new Ellipse2D.Double(p.getValueAt(0) - radius,
-									p.getValueAt(1) - radius, radius + radius,
+							new Ellipse2D.Double(r.getDouble(0) - radius,
+									r.getDouble(1) - radius, radius + radius,
 									radius + radius),
 							circleStroke, this.circleColor));
 		}
 
 		// Add Voronoi edges
-		v.getEdges().stream().forEach(e -> {
-			XYLineAnnotation edge = getVoronoiEdge(e);
-			plot.addAnnotation(edge);
-		});
+		if (cc.vd != null) {
+			v.getEdges().stream().forEach(e -> {
+				XYLineAnnotation edge = getVoronoiEdge(e);
+				plot.addAnnotation(edge);
+			});
+		}
 
 		// Add covered/uncovered points
 		if (sampleSize < 0) {
@@ -136,12 +144,12 @@ public class CoverageCheckerUI extends ApplicationFrame {
 			}
 		} else {
 			// Get "sampleSize" number of random uncovered points
-			List<NDPoint> randUncoveredPoints = sampleUncoveredPoints(cc,
+			DataFrame randUncoveredPoints = sampleUncoveredPoints(cc,
 					sampleSize, cc.d);
 
 			List<DoublePoint> randUncoveredDPs = randUncoveredPoints.stream()
 					.map(p -> new DoublePoint(
-							new double[]{p.getValueAt(0), p.getValueAt(1)}))
+							new double[]{p.getDouble(0), p.getDouble(1)}))
 					.collect(Collectors.toList());
 
 			// Cluster these points using DBSCAN clustering algorithm
@@ -169,8 +177,9 @@ public class CoverageCheckerUI extends ApplicationFrame {
 				double y = c.getPoints().stream()
 						.mapToDouble(p -> p.getPoint()[1]).average()
 						.orElse(Double.NaN);
-				plot.addAnnotation(new XYBoxAnnotation(x - 0.01, y - 0.01, x + 0.01, y + 0.01, circleStroke,
-						clusterColors.get(i), clusterColors.get(i)));
+				plot.addAnnotation(new XYBoxAnnotation(x - 0.01, y - 0.01,
+						x + 0.01, y + 0.01, circleStroke, clusterColors.get(i),
+						clusterColors.get(i)));
 
 			}
 
@@ -239,25 +248,29 @@ public class CoverageCheckerUI extends ApplicationFrame {
 	 * @param d
 	 * @return
 	 */
-	private static List<NDPoint> sampleUncoveredPoints(CoverageChecker cc,
+	private static DataFrame sampleUncoveredPoints(CoverageChecker cc,
 			int sampleSize, int d) {
 		Random rand = new Random();
 		rand.setSeed(seed);
 
-		List<NDPoint> uncoveredPoints = new ArrayList<NDPoint>();
-		while (uncoveredPoints.size() < sampleSize) {
-			double[] coords = new double[d];
+		double[][] vectors = new double[sampleSize][d];
+
+		int count = 0;
+		while (count < sampleSize) {
+			double[] vector = new double[d];
 			for (int dim = 0; dim < d; dim++) {
-				coords[dim] = rand.nextDouble();
+				vector[dim] = rand.nextDouble();
 			}
 
-			NDPoint newPoint = new NDPoint(coords);
-			if (!uncoveredPoints.contains(newPoint)
-					&& !cc.ifCovered(newPoint.getValueAt(0),
-							newPoint.getValueAt(1))) {
-				uncoveredPoints.add(newPoint);
+			if (!cc.ifCovered(vector[0], vector[1])) {
+				vectors[count][0] = vector[0];
+				vectors[count][1] = vector[1];
+				count++;
 			}
 		}
+
+		DataFrame uncoveredPoints = DataFrame.of(vectors);
+
 		return uncoveredPoints;
 	}
 
@@ -352,13 +365,14 @@ public class CoverageCheckerUI extends ApplicationFrame {
 		return new Point2D((x1 + x2) / 2, (y1 + y2) / 2);
 	}
 
-	private XYDataset createPointDataset(NDPoint[] points) {
+	private XYDataset createPointDataset(DataFrame points) {
 		XYSeriesCollection dataset = new XYSeriesCollection();
 
 		// Boys (Age,weight) series
 		XYSeries series1 = new XYSeries("NDPoints");
-		for (NDPoint p : points) {
-			series1.add(p.getValueAt(0), p.getValueAt(1));
+		for (int i = 0; i < points.size(); i++) {
+			Tuple r = points.get(i);
+			series1.add(r.getDouble(0), r.getDouble(1));
 		}
 		dataset.addSeries(series1);
 

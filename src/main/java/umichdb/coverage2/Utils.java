@@ -4,6 +4,11 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
+import smile.data.DataFrame;
+import smile.data.Tuple;
+import smile.data.vector.BaseVector;
+import smile.math.distance.EuclideanDistance;
+
 public class Utils {
 	final static long seed = 10;
 	
@@ -14,27 +19,38 @@ public class Utils {
 	 * @param d
 	 * @return
 	 */
-	public static NDPoint[] genRandNDPoint(int n, int d) {
+	public static DataFrame genRandDataset(int n, int d) {
 		Random rand = new Random();
 		
 		rand.setSeed(seed);
 
-		NDPoint[] randPoints = new NDPoint[n];
-		Set<NDPoint> existingNDpoints = new HashSet<NDPoint>();
+
+		double[][] data = new double[n][d];
 
 		for (int i = 0; i < n; i++) {
 			double[] coords = new double[d];
 			for (int dim = 0; dim < d; dim++) {
-				coords[dim] = rand.nextDouble();
-			}
-
-			NDPoint newPoint = new NDPoint(coords);
-			if (!existingNDpoints.contains(newPoint)) {
-				randPoints[i] = newPoint;
-				existingNDpoints.add(newPoint);
+				data[i][dim] = rand.nextDouble();
 			}
 		}
+		
+		DataFrame randPoints = DataFrame.of(data);
 
 		return randPoints;
+	}
+	
+	/**
+	 * Get Euclidean distance between two tuples
+	 * @param v1
+	 * @param v2
+	 * @return
+	 */
+	public static double getEuclideanDistance(Tuple v1, Tuple v2) {
+		return new EuclideanDistance().d(v1.toArray(), v2.toArray());
+	}
+	
+	public static void main(String[] args) {
+//		DataFrame s = genRandDataset(10, 2);
+//		System.out.println(s);
 	}
 }
