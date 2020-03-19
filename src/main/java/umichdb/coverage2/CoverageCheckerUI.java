@@ -1,18 +1,25 @@
 package umichdb.coverage2;
 
 import java.awt.BasicStroke;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Graphics;
 import java.awt.Stroke;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.WindowConstants;
+
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartMouseEvent;
 import org.jfree.chart.ChartMouseListener;
@@ -39,6 +46,10 @@ import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.RectangleEdge;
 
+import guru.nidi.graphviz.engine.Format;
+import guru.nidi.graphviz.engine.Graphviz;
+import guru.nidi.graphviz.model.MutableGraph;
+import guru.nidi.graphviz.parse.Parser;
 import smile.data.DataFrame;
 import smile.data.Tuple;
 import smile.data.vector.BaseVector;
@@ -80,7 +91,7 @@ public class CoverageCheckerUI extends ApplicationFrame {
 				cc.sites.nrows(), cc.sites.ncols(), cc.k, cc.theta);
 		DataFrame points = cc.sites;
 		double radius = cc.theta;
-		VoronoiKOrder v = cc.vd;
+		VoronoiKOrder v = cc.coverageVoronoiDiagram;
 		this.cc = cc;
 
 		// Create dataset
@@ -115,7 +126,7 @@ public class CoverageCheckerUI extends ApplicationFrame {
 		}
 
 		// Add Voronoi edges
-		if (cc.vd != null) {
+		if (cc.coverageVoronoiDiagram != null) {
 			v.getEdges().stream().forEach(e -> {
 				XYLineAnnotation edge = getVoronoiEdge(e);
 				plot.addAnnotation(edge);
@@ -219,6 +230,17 @@ public class CoverageCheckerUI extends ApplicationFrame {
 		}
 
 		setContentPane(panel);
+
+		if (cc.coverageDecisionTree != null) {
+			try {
+				MutableGraph g = new Parser()
+						.read(cc.coverageDecisionTree.dot());
+				DisplayDecisionTree(
+						Graphviz.fromGraph(g).render(Format.PNG).toImage());
+			} catch (Exception e) {
+
+			}
+		}
 	}
 
 	/**
@@ -363,6 +385,24 @@ public class CoverageCheckerUI extends ApplicationFrame {
 		}
 
 		return new Point2D((x1 + x2) / 2, (y1 + y2) / 2);
+	}
+
+	private static JFrame frame;
+	private static JLabel label;
+	public static void DisplayDecisionTree(BufferedImage image) {
+		if (frame == null) {
+			frame = new JFrame();
+			frame.setTitle("stained_image");
+			frame.setSize(image.getWidth(), image.getHeight());
+			frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+			label = new JLabel();
+			label.setIcon(new ImageIcon(image));
+			frame.getContentPane().add(label, BorderLayout.CENTER);
+			frame.setLocationRelativeTo(null);
+			frame.pack();
+			frame.setVisible(true);
+		} else
+			label.setIcon(new ImageIcon(image));
 	}
 
 	private XYDataset createPointDataset(DataFrame points) {

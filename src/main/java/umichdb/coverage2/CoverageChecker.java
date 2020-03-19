@@ -7,6 +7,10 @@ import java.util.stream.Collectors;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
+import java.awt.Graphics;
+import java.io.File;
+import java.io.InputStream;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -17,17 +21,25 @@ import java.util.List;
 import org.apache.commons.math3.util.*;
 import org.jfree.ui.RefineryUtilities;
 
+import guru.nidi.graphviz.attribute.Color;
+import guru.nidi.graphviz.attribute.Style;
+import guru.nidi.graphviz.engine.Format;
+import guru.nidi.graphviz.engine.Graphviz;
+import guru.nidi.graphviz.model.MutableGraph;
+import guru.nidi.graphviz.parse.Parser;
 import smile.data.DataFrame;
 import smile.data.Tuple;
 import smile.data.formula.Formula;
 import smile.data.type.StructType;
 import smile.data.vector.BaseVector;
 import smile.data.vector.BooleanVector;
+import smile.base.cart.DecisionNode;
+import smile.base.cart.Node;
 import smile.classification.DecisionTree;
 
 public class CoverageChecker {
-	VoronoiKOrder vd;
-	DecisionTree coverageTree;
+	VoronoiKOrder coverageVoronoiDiagram;
+	DecisionTree coverageDecisionTree;
 	StructType srcDataSchema;
 	DataFrame sites;
 	int d;
@@ -49,7 +61,7 @@ public class CoverageChecker {
 
 		// Create cache in the form of a Voronoi diagram
 		findVoronoi();
-		this.coverageTree = null;
+		this.coverageDecisionTree = null;
 	}
 
 	/**
@@ -100,22 +112,36 @@ public class CoverageChecker {
 
 			String labelName = "ifCovered";
 			srcDataSchema = observations.schema();
+
 			DataFrame labeledObservations = observations
 					.merge(BooleanVector.of(labelName, labels));
 			Formula f = Formula.lhs(labelName);
 
 			// Start building decision tree
-			coverageTree = DecisionTree.fit(f, labeledObservations);
+			coverageDecisionTree = DecisionTree.fit(f, labeledObservations);
+
+			// System.out.println((DecisionNode)coverageDecisionTree.ro);
+
+			List<String> lines = new ArrayList<>();
+			Node n = coverageDecisionTree.root();
+
+//			// Preparing to draw in 2d space
+//			coverageDecisionTree.root().toString(coverageDecisionTree.schema(),
+//					labeledObservations.schema().field(labelName), null, 0,
+//					BigInteger.ONE, lines);
+
+
+			coverageDecisionTree.dot();
 
 			System.out.println(
 					"STATUS: Decision tree to report coverage is built.");
 		} else {
 			System.out.println(
-					"WARNING: The dataset is all covered in the current setting");
-			this.coverageTree = null;
+					"WARNING: The dataset is all covered/uncovered in the current setting.");
+			this.coverageDecisionTree = null;
 		}
 
-		this.vd = null;
+		this.coverageVoronoiDiagram = null;
 	}
 
 	/**
@@ -130,7 +156,7 @@ public class CoverageChecker {
 			point2dList.add(newP);
 		} ;
 
-		this.vd = new VoronoiKOrder(point2dList, k, false);
+		this.coverageVoronoiDiagram = new VoronoiKOrder(point2dList, k, false);
 	}
 
 	/**
@@ -162,7 +188,7 @@ public class CoverageChecker {
 	 * @return
 	 */
 	public boolean ifCovered(double x, double y) {
-		if (this.vd != null) {
+		if (this.coverageVoronoiDiagram != null) {
 			PointSet polygonKeys = getContainingVoronoiPolyKey(x, y);
 			if (polygonKeys == null)
 				return false;
@@ -172,8 +198,8 @@ public class CoverageChecker {
 			return polygonKeys.stream().mapToInt(
 					p -> (p.dist2(new Point2D(x, y)) <= theta * theta) ? 1 : 0)
 					.sum() >= k;
-		} else if (this.coverageTree != null) {
-			return this.coverageTree
+		} else if (this.coverageDecisionTree != null) {
+			return this.coverageDecisionTree
 					.predict(Tuple.of(new double[]{x, y}, srcDataSchema)) == 0
 							? false
 							: true;
@@ -189,7 +215,7 @@ public class CoverageChecker {
 	 * @return
 	 */
 	public PointSet getContainingVoronoiPolyKey(double x, double y) {
-		for (VoronoiPolygon p : vd.getPolygons()) {
+		for (VoronoiPolygon p : coverageVoronoiDiagram.getPolygons()) {
 			if (p.contains(x, y))
 				return p.regionKey;
 		}
