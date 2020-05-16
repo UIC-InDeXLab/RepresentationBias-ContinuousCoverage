@@ -12,6 +12,7 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -32,13 +33,16 @@ import org.jfree.chart.annotations.XYPolygonAnnotation;
 import org.jfree.chart.annotations.XYShapeAnnotation;
 import org.jfree.chart.annotations.XYTextAnnotation;
 import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.entity.ChartEntity;
 import org.jfree.chart.entity.XYItemEntity;
+import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYBubbleRenderer;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
+import org.jfree.chart.title.TextTitle;
 import org.jfree.data.general.DatasetUtilities;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
@@ -77,18 +81,24 @@ public class CoverageCheckerUI extends ApplicationFrame {
 
 	private double minRange = 0.0;
 	private double maxRange = 1.0;
+	
+	private final int tickFontSize = 20;
+	private final int labelFontSize = 25;
+	private final int titleFontSize = 30;
 
 	static final int seed = 19;
 
 	private CoverageChecker cc;
 
+	public enum Uiconfig {
+		SHOWVORONOI, SHOWCIRCLE, SHOWCOLOR, INTERACTIVE, SHOWTITLE,
+	}
+	// public static final
+
 	public CoverageCheckerUI(String title, CoverageChecker cc, double delta,
-			int sampleSize, boolean allowInteractive) {
+			int sampleSize, Map<Uiconfig, Boolean> viewConfig) {
 		super(title);
 
-		title = String.format(
-				"Coverage for %d random points in %d-d space. (k=%d, theta=%.2f)",
-				cc.sites.nrows(), cc.sites.ncols(), cc.k, cc.theta);
 		DataFrame points = cc.sites;
 		double radius = cc.theta;
 		VoronoiKOrder v = cc.coverageVoronoiDiagram;
@@ -114,19 +124,37 @@ public class CoverageCheckerUI extends ApplicationFrame {
 		domainAxis.setRange(minRange, maxRange);
 		rangeAxis.setRange(minRange, maxRange);
 
+		Font titleFont = new Font("Dialog", Font.PLAIN, titleFontSize);
+		chart.setTitle(new TextTitle(title, titleFont));
+
+		Font plotFont = new Font("Dialog", Font.PLAIN, labelFontSize);
+		domainAxis.setLabelFont(plotFont);
+		rangeAxis.setLabelFont(plotFont);
+
+		Font tickFont = new Font("Dialog", Font.PLAIN, tickFontSize);
+		domainAxis.setTickLabelFont(tickFont);
+		rangeAxis.setTickLabelFont(tickFont);
+
+		// CategoryPlot plot = chart.getCategoryPlot();
+		//
+		// plot.getDomainAxis().setLabelFont(plotFont);
+		// plot.getRangeAxis().setLabelFont(plotFont);
+
 		// Add circles
-		for (int i = 0; i < points.size(); i++) {
-			Tuple r = points.get(i);
-			plot.addAnnotation(
-					new XYShapeAnnotation(
-							new Ellipse2D.Double(r.getDouble(0) - radius,
-									r.getDouble(1) - radius, radius + radius,
-									radius + radius),
-							circleStroke, this.circleColor));
+		if (viewConfig.getOrDefault(Uiconfig.SHOWCIRCLE, true)) {
+			for (int i = 0; i < points.size(); i++) {
+				Tuple r = points.get(i);
+				plot.addAnnotation(new XYShapeAnnotation(
+						new Ellipse2D.Double(r.getDouble(0) - radius,
+								r.getDouble(1) - radius, radius + radius,
+								radius + radius),
+						circleStroke, this.circleColor));
+			}
 		}
 
 		// Add Voronoi edges
-		if (cc.coverageVoronoiDiagram != null) {
+		if (viewConfig.getOrDefault(Uiconfig.SHOWVORONOI, true)
+				&& cc.coverageVoronoiDiagram != null) {
 			v.getEdges().stream().forEach(e -> {
 				XYLineAnnotation edge = getVoronoiEdge(e);
 				plot.addAnnotation(edge);
@@ -134,73 +162,76 @@ public class CoverageCheckerUI extends ApplicationFrame {
 		}
 
 		// Add covered/uncovered points
-		if (sampleSize < 0) {
-			for (double x = 0; x <= 1; x += delta) {
-				for (double y = 0; y <= 1; y += delta) {
-					if (cc.ifCovered(x, y)) {
+		if (viewConfig.getOrDefault(Uiconfig.SHOWCOLOR, true)) {
+			if (sampleSize < 0) {
+				for (double x = 0; x <= 1; x += delta) {
+					for (double y = 0; y <= 1; y += delta) {
+						if (cc.ifCovered(x, y)) {
+							plot.addAnnotation(new XYShapeAnnotation(
+									new Ellipse2D.Double(x, y, delta / 5,
+											delta / 5),
+									circleStroke, this.coveredColor,
+									this.coveredColor));
+						} else {
+							plot.addAnnotation(new XYShapeAnnotation(
+									new Ellipse2D.Double(x, y, delta / 5,
+											delta / 5),
+									circleStroke, this.uncoveredColor,
+									this.uncoveredColor));
+						}
+
+					}
+				}
+			} else {
+				// Get "sampleSize" number of random uncovered points
+				DataFrame randUncoveredPoints = sampleUncoveredPoints(cc,
+						sampleSize, cc.d);
+
+				List<DoublePoint> randUncoveredDPs = randUncoveredPoints
+						.stream()
+						.map(p -> new DoublePoint(
+								new double[]{p.getDouble(0), p.getDouble(1)}))
+						.collect(Collectors.toList());
+
+				// Cluster these points using DBSCAN clustering algorithm
+				DBSCANClusterer s = new DBSCANClusterer<DoublePoint>(0.1, 10);
+				List<Cluster> clusters = s.cluster(randUncoveredDPs);
+
+				List<Color> clusterColors = getRandomColors(clusters.size());
+
+				for (int i = 0; i < clusters.size(); i++) {
+
+					// Plot all points by cluster
+					Cluster<DoublePoint> c = clusters.get(i);
+					for (DoublePoint point : c.getPoints()) {
 						plot.addAnnotation(new XYShapeAnnotation(
-								new Ellipse2D.Double(x, y, delta / 5,
-										delta / 5),
-								circleStroke, this.coveredColor,
-								this.coveredColor));
-					} else {
-						plot.addAnnotation(new XYShapeAnnotation(
-								new Ellipse2D.Double(x, y, delta / 5,
-										delta / 5),
-								circleStroke, this.uncoveredColor,
-								this.uncoveredColor));
+								new Ellipse2D.Double(point.getPoint()[0],
+										point.getPoint()[1], 0.005, 0.005),
+								circleStroke, clusterColors.get(i),
+								clusterColors.get(i)));
 					}
 
-				}
-			}
-		} else {
-			// Get "sampleSize" number of random uncovered points
-			DataFrame randUncoveredPoints = sampleUncoveredPoints(cc,
-					sampleSize, cc.d);
+					// Plot centroid of each cluster
+					double x = c.getPoints().stream()
+							.mapToDouble(p -> p.getPoint()[0]).average()
+							.orElse(Double.NaN);
+					double y = c.getPoints().stream()
+							.mapToDouble(p -> p.getPoint()[1]).average()
+							.orElse(Double.NaN);
+					plot.addAnnotation(new XYBoxAnnotation(x - 0.01, y - 0.01,
+							x + 0.01, y + 0.01, circleStroke,
+							clusterColors.get(i), clusterColors.get(i)));
 
-			List<DoublePoint> randUncoveredDPs = randUncoveredPoints.stream()
-					.map(p -> new DoublePoint(
-							new double[]{p.getDouble(0), p.getDouble(1)}))
-					.collect(Collectors.toList());
-
-			// Cluster these points using DBSCAN clustering algorithm
-			DBSCANClusterer s = new DBSCANClusterer<DoublePoint>(0.1, 10);
-			List<Cluster> clusters = s.cluster(randUncoveredDPs);
-
-			List<Color> clusterColors = getRandomColors(clusters.size());
-
-			for (int i = 0; i < clusters.size(); i++) {
-
-				// Plot all points by cluster
-				Cluster<DoublePoint> c = clusters.get(i);
-				for (DoublePoint point : c.getPoints()) {
-					plot.addAnnotation(new XYShapeAnnotation(
-							new Ellipse2D.Double(point.getPoint()[0],
-									point.getPoint()[1], 0.005, 0.005),
-							circleStroke, clusterColors.get(i),
-							clusterColors.get(i)));
 				}
 
-				// Plot centroid of each cluster
-				double x = c.getPoints().stream()
-						.mapToDouble(p -> p.getPoint()[0]).average()
-						.orElse(Double.NaN);
-				double y = c.getPoints().stream()
-						.mapToDouble(p -> p.getPoint()[1]).average()
-						.orElse(Double.NaN);
-				plot.addAnnotation(new XYBoxAnnotation(x - 0.01, y - 0.01,
-						x + 0.01, y + 0.01, circleStroke, clusterColors.get(i),
-						clusterColors.get(i)));
-
 			}
-
 		}
 
 		// Create Panel
 		ChartPanel panel = new ChartPanel(chart);
 
 		// Add moust event listener
-		if (allowInteractive) {
+		if (viewConfig.getOrDefault(Uiconfig.INTERACTIVE, true)) {
 			panel.addChartMouseListener(new ChartMouseListener() {
 				@Override
 				public void chartMouseClicked(ChartMouseEvent cme) {

@@ -1,4 +1,4 @@
-package umichdb.coverage2;
+package vldb;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,15 +15,18 @@ import org.jfree.ui.RefineryUtilities;
 
 import smile.data.DataFrame;
 import smile.data.vector.BaseVector;
+import umichdb.coverage2.CoverageChecker;
+import umichdb.coverage2.CoverageCheckerUI;
 import umichdb.coverage2.CoverageCheckerUI.Uiconfig;
+import umichdb.coverage2.Utils;
 
-public class TestCoverageChecker {
+public class Fig2 {
 
 	public static void main(String[] args) {
 		int n = 100;
 		int d = 2;
 		double theta = 0.1;
-		int k = 2;
+		int k = 1;
 		double delta = 0.005;
 
 		System.out.printf("Create %d points of dimension %d\n", n, d);
@@ -40,10 +43,12 @@ public class TestCoverageChecker {
 		System.out.printf("Coverage discovery time: %f ms\n",
 				endTime - beginTime);
 		
-		Map<Uiconfig, Boolean> viewConfig = new HashMap<Uiconfig, Boolean>();
-		viewConfig.put(Uiconfig.SHOWVORONOI, false);
+		Map<Uiconfig, Boolean> config = new HashMap<Uiconfig, Boolean>();
+		config.put(Uiconfig.SHOWCOLOR, false);
+		config.put(Uiconfig.SHOWCIRCLE, false);
 
-		cc.view(delta, -1, viewConfig);
+
+		cc.view(delta, -1, config);
 
 	}
 }

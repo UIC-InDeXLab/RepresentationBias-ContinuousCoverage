@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.math3.util.*;
 import org.jfree.ui.RefineryUtilities;
@@ -33,9 +34,11 @@ import smile.data.formula.Formula;
 import smile.data.type.StructType;
 import smile.data.vector.BaseVector;
 import smile.data.vector.BooleanVector;
+import umichdb.coverage2.CoverageCheckerUI.Uiconfig;
 import smile.base.cart.DecisionNode;
 import smile.base.cart.Node;
 import smile.classification.DecisionTree;
+import smile.base.cart.SplitRule;
 
 public class CoverageChecker {
 	VoronoiKOrder coverageVoronoiDiagram;
@@ -118,7 +121,7 @@ public class CoverageChecker {
 			Formula f = Formula.lhs(labelName);
 
 			// Start building decision tree
-			coverageDecisionTree = DecisionTree.fit(f, labeledObservations);
+			coverageDecisionTree = DecisionTree.fit(f, labeledObservations, SplitRule.GINI, 10, 100, 2);
 
 			// System.out.println((DecisionNode)coverageDecisionTree.ro);
 
@@ -167,13 +170,12 @@ public class CoverageChecker {
 	 * @param sampleSize
 	 * @param allowInteractive
 	 */
-	public static void View(CoverageChecker cc, double delta, int sampleSize,
-			boolean allowInteractive) {
-		CoverageCheckerUI chart = new CoverageCheckerUI(
-				String.format(
-						"Coverage for %d random points in %d-d space. (k=%d, theta=%.2f)",
-						cc.sites.size(), cc.sites.ncols(), cc.k, cc.theta),
-				cc, delta, sampleSize, allowInteractive);
+	public void view(double delta, int sampleSize, Map<Uiconfig, Boolean> viewConfig) {
+		String title = String.format(
+				"%d points in %d-d space (k=%d, theta=%.2f)",
+				this.sites.size(), this.sites.ncols(), this.k, this.theta);
+
+		CoverageCheckerUI chart = new CoverageCheckerUI(title, this, delta, sampleSize, viewConfig);
 		chart.pack();
 		RefineryUtilities.centerFrameOnScreen(chart);
 		chart.setSize(800, 800);
