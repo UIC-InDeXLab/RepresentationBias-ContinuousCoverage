@@ -34,6 +34,7 @@ import smile.data.formula.Formula;
 import smile.data.type.StructType;
 import smile.data.vector.BaseVector;
 import smile.data.vector.BooleanVector;
+import smile.feature.Scaler;
 import umichdb.coverage2.CoverageCheckerUI.Uiconfig;
 import smile.base.cart.DecisionNode;
 import smile.base.cart.Node;
@@ -44,7 +45,7 @@ public class CoverageChecker {
 	VoronoiKOrder coverageVoronoiDiagram;
 	DecisionTree coverageDecisionTree;
 	StructType srcDataSchema;
-	DataFrame sites;
+	DataFrame dataset;
 	int d;
 	int k;
 	double theta;
@@ -52,15 +53,20 @@ public class CoverageChecker {
 	/**
 	 * Find exact coverage
 	 * 
-	 * @param points
+	 * @param dataset
 	 * @param k
+	 *            (minimum number of data points within theta distance to
+	 *            qualify as covered)
 	 * @param theta
+	 *            (distance)
 	 */
-	public CoverageChecker(DataFrame points, int k, double theta) {
-		this.sites = points;
+	public CoverageChecker(DataFrame dataset, int k, double theta) {
+		// Rescaling
+		Scaler s = Scaler.fit(dataset);
+		this.dataset = s.transform(dataset);
 		this.k = k; // k points
 		this.theta = theta; // max distance to qualify as adjacent
-		this.d = points.ncols();
+		this.d = dataset.ncols();
 
 		// Create cache in the form of a Voronoi diagram
 		findVoronoi();
@@ -70,20 +76,24 @@ public class CoverageChecker {
 	/**
 	 * Find approximate coverage through sampling
 	 * 
-	 * @param points
+	 * @param dataset
 	 * @param k
 	 * @param theta
 	 * @param numSamples
 	 */
-	public CoverageChecker(DataFrame points, int k, double theta, int s) {
-		this.sites = points;
+	public CoverageChecker(DataFrame dataset, int k, double theta,
+			int numSamples) {
+		// Rescaling
+		Scaler s = Scaler.fit(dataset);
+		this.dataset = s.transform(dataset);
+
 		this.k = k; // k points
 		this.theta = theta; // max distance to qualify as adjacent
-		this.d = points.ncols();
+		this.d = dataset.ncols();
 
 		// Create "s" many samples as observations to build a "decision tree"
 		// later
-		DataFrame observations = Utils.genRandDataset(s, this.d);
+		DataFrame observations = Utils.genRandDataset(numSamples, this.d);
 		boolean[] labels = new boolean[observations.nrows()];
 
 		int counter = 0;
@@ -92,9 +102,9 @@ public class CoverageChecker {
 
 		for (int i = 0; i < observations.size(); i++) {
 			int neighborCount = 0;
-			for (int j = 0; j < this.sites.size(); j++) {
+			for (int j = 0; j < this.dataset.size(); j++) {
 				if (Utils.getEuclideanDistance(observations.get(i),
-						this.sites.get(j)) <= this.theta) {
+						this.dataset.get(j)) <= this.theta) {
 					neighborCount++;
 					if (neighborCount >= k) {
 						break;
@@ -121,18 +131,18 @@ public class CoverageChecker {
 			Formula f = Formula.lhs(labelName);
 
 			// Start building decision tree
-			coverageDecisionTree = DecisionTree.fit(f, labeledObservations, SplitRule.GINI, 10, 100, 2);
+			coverageDecisionTree = DecisionTree.fit(f, labeledObservations,
+					SplitRule.GINI, 10, 100, 2);
 
 			// System.out.println((DecisionNode)coverageDecisionTree.ro);
 
 			List<String> lines = new ArrayList<>();
 			Node n = coverageDecisionTree.root();
 
-//			// Preparing to draw in 2d space
-//			coverageDecisionTree.root().toString(coverageDecisionTree.schema(),
-//					labeledObservations.schema().field(labelName), null, 0,
-//					BigInteger.ONE, lines);
-
+			// // Preparing to draw in 2d space
+			// coverageDecisionTree.root().toString(coverageDecisionTree.schema(),
+			// labeledObservations.schema().field(labelName), null, 0,
+			// BigInteger.ONE, lines);
 
 			coverageDecisionTree.dot();
 
@@ -153,8 +163,8 @@ public class CoverageChecker {
 	private void findVoronoi() {
 		List<Point2D> point2dList = new ArrayList<Point2D>();
 
-		for (int i = 0; i < this.sites.size(); i++) {
-			Tuple r = this.sites.get(i);
+		for (int i = 0; i < this.dataset.size(); i++) {
+			Tuple r = this.dataset.get(i);
 			Point2D newP = new Point2D(r.getDouble(0), r.getDouble(1));
 			point2dList.add(newP);
 		} ;
@@ -170,12 +180,14 @@ public class CoverageChecker {
 	 * @param sampleSize
 	 * @param allowInteractive
 	 */
-	public void view(double delta, int sampleSize, Map<Uiconfig, Boolean> viewConfig) {
+	public void view(double delta, int sampleSize,
+			Map<Uiconfig, Boolean> viewConfig) {
 		String title = String.format(
 				"%d points in %d-d space (k=%d, theta=%.2f)",
-				this.sites.size(), this.sites.ncols(), this.k, this.theta);
+				this.dataset.size(), this.dataset.ncols(), this.k, this.theta);
 
-		CoverageCheckerUI chart = new CoverageCheckerUI(title, this, delta, sampleSize, viewConfig);
+		CoverageCheckerUI chart = new CoverageCheckerUI(title, this, delta,
+				sampleSize, viewConfig);
 		chart.pack();
 		RefineryUtilities.centerFrameOnScreen(chart);
 		chart.setSize(800, 800);

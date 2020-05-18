@@ -99,7 +99,7 @@ public class CoverageCheckerUI extends ApplicationFrame {
 			int sampleSize, Map<Uiconfig, Boolean> viewConfig) {
 		super(title);
 
-		DataFrame points = cc.sites;
+		DataFrame points = cc.dataset;
 		double radius = cc.theta;
 		VoronoiKOrder v = cc.coverageVoronoiDiagram;
 		this.cc = cc;

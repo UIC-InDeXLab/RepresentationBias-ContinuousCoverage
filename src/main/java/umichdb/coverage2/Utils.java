@@ -11,7 +11,7 @@ import smile.math.distance.EuclideanDistance;
 
 public class Utils {
 	final static long seed = 10;
-	
+
 	/**
 	 * Randomly generate n d-dimensional points
 	 * 
@@ -21,9 +21,8 @@ public class Utils {
 	 */
 	public static DataFrame genRandDataset(int n, int d) {
 		Random rand = new Random();
-		
-		rand.setSeed(seed);
 
+		rand.setSeed(seed);
 
 		double[][] data = new double[n][d];
 
@@ -33,14 +32,15 @@ public class Utils {
 				data[i][dim] = rand.nextDouble();
 			}
 		}
-		
+
 		DataFrame randPoints = DataFrame.of(data);
 
 		return randPoints;
 	}
-	
+
 	/**
 	 * Get Euclidean distance between two tuples
+	 * 
 	 * @param v1
 	 * @param v2
 	 * @return
@@ -48,9 +48,9 @@ public class Utils {
 	public static double getEuclideanDistance(Tuple v1, Tuple v2) {
 		return new EuclideanDistance().d(v1.toArray(), v2.toArray());
 	}
-	
+
 	public static void main(String[] args) {
-//		DataFrame s = genRandDataset(10, 2);
-//		System.out.println(s);
+		// DataFrame s = genRandDataset(10, 2);
+		// System.out.println(s);
 	}
 }
