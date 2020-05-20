@@ -15,7 +15,7 @@ import org.jfree.ui.RefineryUtilities;
 
 import smile.data.DataFrame;
 import smile.data.vector.BaseVector;
-import umichdb.coverage2.CoverageCheckerUI.Uiconfig;
+import umichdb.coverage2.MithraCoverageCheckerUI.Uiconfig;
 
 public class TestCoverageChecker {
 
@@ -34,7 +34,7 @@ public class TestCoverageChecker {
 		System.out.println("Start building coverage graph");
 
 		double beginTime = System.currentTimeMillis();
-		CoverageChecker cc = new CoverageChecker(randPoints, k, theta);
+		MithraCoverageChecker cc = new MithraCoverageChecker(randPoints, k, theta);
 		double endTime = System.currentTimeMillis();
 
 		System.out.printf("Coverage discovery time: %f ms\n",

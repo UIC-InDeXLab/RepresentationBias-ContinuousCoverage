@@ -15,9 +15,9 @@ import org.jfree.ui.RefineryUtilities;
 
 import smile.data.DataFrame;
 import smile.data.vector.BaseVector;
-import umichdb.coverage2.CoverageChecker;
-import umichdb.coverage2.CoverageCheckerUI;
-import umichdb.coverage2.CoverageCheckerUI.Uiconfig;
+import umichdb.coverage2.MithraCoverageChecker;
+import umichdb.coverage2.MithraCoverageCheckerUI;
+import umichdb.coverage2.MithraCoverageCheckerUI.Uiconfig;
 import umichdb.coverage2.Utils;
 
 public class Fig2 {
@@ -25,7 +25,7 @@ public class Fig2 {
 	public static void main(String[] args) {
 		int n = 100;
 		int d = 2;
-		double theta = 0.1;
+		double rho = 0.1;
 		int k = 1;
 		double delta = 0.005;
 
@@ -37,7 +37,7 @@ public class Fig2 {
 		System.out.println("Start building coverage graph");
 
 		double beginTime = System.currentTimeMillis();
-		CoverageChecker cc = new CoverageChecker(randPoints, k, theta);
+		MithraCoverageChecker cc = new MithraCoverageChecker(randPoints, k, rho);
 		double endTime = System.currentTimeMillis();
 
 		System.out.printf("Coverage discovery time: %f ms\n",

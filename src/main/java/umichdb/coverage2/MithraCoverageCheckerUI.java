@@ -63,7 +63,7 @@ import org.apache.commons.math3.ml.clustering.Cluster;
 import org.apache.commons.math3.ml.clustering.DBSCANClusterer;
 import org.apache.commons.math3.ml.clustering.DoublePoint;
 
-public class CoverageCheckerUI extends ApplicationFrame {
+public class MithraCoverageCheckerUI extends ApplicationFrame {
 	private static final long serialVersionUID = 1L;
 
 	private final Color backgroundColor = new Color(255, 228, 196);
@@ -81,26 +81,26 @@ public class CoverageCheckerUI extends ApplicationFrame {
 
 	private double minRange = 0.0;
 	private double maxRange = 1.0;
-	
+
 	private final int tickFontSize = 20;
 	private final int labelFontSize = 25;
 	private final int titleFontSize = 30;
 
 	static final int seed = 19;
 
-	private CoverageChecker cc;
+	private MithraCoverageChecker cc;
 
 	public enum Uiconfig {
 		SHOWVORONOI, SHOWCIRCLE, SHOWCOLOR, INTERACTIVE, SHOWTITLE,
 	}
 	// public static final
 
-	public CoverageCheckerUI(String title, CoverageChecker cc, double delta,
+	public MithraCoverageCheckerUI(String title, MithraCoverageChecker cc, double delta,
 			int sampleSize, Map<Uiconfig, Boolean> viewConfig) {
 		super(title);
 
 		DataFrame points = cc.dataset;
-		double radius = cc.theta;
+		double radius = cc.rho;
 		VoronoiKOrder v = cc.coverageVoronoiDiagram;
 		this.cc = cc;
 
@@ -166,7 +166,7 @@ public class CoverageCheckerUI extends ApplicationFrame {
 			if (sampleSize < 0) {
 				for (double x = 0; x <= 1; x += delta) {
 					for (double y = 0; y <= 1; y += delta) {
-						if (cc.ifCovered(x, y)) {
+						if (cc.ifCovered(new double[]{x, y}, false)) {
 							plot.addAnnotation(new XYShapeAnnotation(
 									new Ellipse2D.Double(x, y, delta / 5,
 											delta / 5),
@@ -254,8 +254,9 @@ public class CoverageCheckerUI extends ApplicationFrame {
 					ValueAxis yAxis = plot.getRangeAxis();
 					double y = yAxis.java2DToValue(cme.getTrigger().getY(),
 							dataArea, RectangleEdge.LEFT);
-					System.out.println("Click on " + new Point2D(x, y)
-							+ ". If covered: " + cc.ifCovered(x, y));
+					System.out.println(
+							"Click on " + new Point2D(x, y) + ". If covered: "
+									+ cc.ifCovered(new double[]{x, y}, false));
 				}
 			});
 		}
@@ -301,7 +302,7 @@ public class CoverageCheckerUI extends ApplicationFrame {
 	 * @param d
 	 * @return
 	 */
-	private static DataFrame sampleUncoveredPoints(CoverageChecker cc,
+	private static DataFrame sampleUncoveredPoints(MithraCoverageChecker cc,
 			int sampleSize, int d) {
 		Random rand = new Random();
 		rand.setSeed(seed);
@@ -315,7 +316,7 @@ public class CoverageCheckerUI extends ApplicationFrame {
 				vector[dim] = rand.nextDouble();
 			}
 
-			if (!cc.ifCovered(vector[0], vector[1])) {
+			if (!cc.ifCovered(vector, false)) {
 				vectors[count][0] = vector[0];
 				vectors[count][1] = vector[1];
 				count++;

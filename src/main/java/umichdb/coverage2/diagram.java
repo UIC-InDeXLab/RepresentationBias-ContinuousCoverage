@@ -479,7 +479,7 @@ class VoronoiPolygon extends Polygon2D {
 // is removed.
 // The algorithm is described in my thesis; I'd jus like to note that it
 // constructs
-// a diagram from scratch in O(k(n-k)nlogn), but is usaully faster
+// a diagram from scratch in O(k(n-k)nlogn), but is usually faster
 // adding/removing/
 // moving points.
 // VoronoiKOrder contains four important sets:
@@ -848,18 +848,16 @@ class VoronoiKOrder {
 		if ((todo.size() == 0) && (S.size() > k) && (edges.size() == 0))
 			findStartingEdge();
 
-		// This is to prevent the algorithm from hanging if something goues
+		// This is to prevent the algorithm from hanging if something goes
 		// wrong.
 		// emergencyStop is the maximum number of iterations allowed until the
-		// loop
-		// is forcefully stopped. To jump without parachute, set
+		// loop is forcefully stopped. To jump without parachute, set
 		// emergencyStop=-1.
-		int emergencyStop = -1; // (S.size() * (S.size() - k) + 100) * 3;
+		int emergencyStop = (S.size() * (S.size() - k) + 100) * 3;
 
 		while (todo.size() > 0) {
-			// Again, the emergancy stop. If the maximum number of iterations is
-			// reached,
-			// we give it a second try, but this time we recrompute the diagram
+			// Again, the emergency stop. If the maximum number of iterations is
+			// reached, we give it a second try, but this time we re-compute the diagram
 			// from scratch.
 			// If this fails as well, we return an empty diagram. So, if you
 			// move a point around

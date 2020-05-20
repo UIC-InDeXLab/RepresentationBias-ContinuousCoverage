@@ -27,7 +27,6 @@ public class Utils {
 		double[][] data = new double[n][d];
 
 		for (int i = 0; i < n; i++) {
-			double[] coords = new double[d];
 			for (int dim = 0; dim < d; dim++) {
 				data[i][dim] = rand.nextDouble();
 			}
@@ -47,6 +46,16 @@ public class Utils {
 	 */
 	public static double getEuclideanDistance(Tuple v1, Tuple v2) {
 		return new EuclideanDistance().d(v1.toArray(), v2.toArray());
+	}
+	
+	/**
+	 * Get Euclidean distance between two double arrays
+	 * @param v1
+	 * @param v2
+	 * @return
+	 */
+	public static double getEuclideanDistance(double[] v1, double[] v2) {
+		return new EuclideanDistance().d(v1, v2);
 	}
 
 	public static void main(String[] args) {
