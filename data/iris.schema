@@ -1,0 +1,6 @@
+Name,Type,Values
+sepalLength,continuous,
+sepalWidth,continuous,
+petalLength,continuous,
+petalWidth,continuous,
+class,nominal,"Iris-setosa,Iris-versicolour,Iris-virginica"

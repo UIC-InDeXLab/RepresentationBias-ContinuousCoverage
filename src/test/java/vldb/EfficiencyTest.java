@@ -1,10 +1,18 @@
 package vldb;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.csv.CSVFormat;
 
+import cli.Cli;
 import smile.data.DataFrame;
 import smile.data.Tuple;
 import smile.data.measure.NominalScale;
@@ -24,23 +32,13 @@ public class EfficiencyTest {
 
 	/**
 	 * 
-	 * @param fileName
-	 * @param schemaFull
+	 * @param dataFileName
+	 * @param schemaFileName
 	 */
-	public EfficiencyTest(String fileName, StructType schemaFull,
+	public EfficiencyTest(String dataFileName, String schemaFileName,
 			String[] selectedAttrs) {
-		CSV csv = new CSV(CSVFormat.DEFAULT);
-		csv.schema(schemaFull);
-
-		try {
-			// Load data and also filter out unnecessary columns
-			df = csv.read(fileName).select(selectedAttrs);
-		} catch (Exception ex) {
-			System.err.println("Failed to load file: " + ex);
-			ex.printStackTrace();
-			System.exit(-1);
-		}
-
+		this.df = Utils.loadDataSetFromCSV(dataFileName, schemaFileName);
+		this.df = this.df.select(selectedAttrs);
 	}
 
 	/**
@@ -68,7 +66,7 @@ public class EfficiencyTest {
 	 */
 	public double mithraQueryTime(int numQueries, int d) {
 		DataFrame queryPoints = Utils.genRandDataset(numQueries, d);
-		
+
 		double constructionBeginTime = System.currentTimeMillis();
 
 		for (BaseVector p : queryPoints) {
@@ -81,6 +79,7 @@ public class EfficiencyTest {
 
 	/**
 	 * Evaluate basicCoverage query time (in seconds)
+	 * 
 	 * @param k
 	 * @param rho
 	 * @param numQueries
@@ -101,28 +100,28 @@ public class EfficiencyTest {
 		return (constructionEndTime - constructionBeginTime) / 1000.0;
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws ParseException {
+		// Parse command line arguments and set specs
+		Cli cmd = new Cli(args);
 
-		// Test IRIS
-		String fileName = "data/iris.data";
-		StructType schema = DataTypes
-				.struct(new StructField("sepalLength", DataTypes.DoubleType),
-						new StructField("sepalWidth", DataTypes.DoubleType),
-						new StructField("petalLength", DataTypes.DoubleType),
-						new StructField("petalWidth", DataTypes.DoubleType),
-						new StructField("class", DataTypes.ByteType,
-								new NominalScale("Iris-setosa",
-										"Iris-versicolour", "Iris-virginica")));
-		String[] selectedAttrs = new String[]{"sepalLength", "sepalWidth"};
+		String datasetFileName = cmd.getArgValue(Cli.ARG_INPUT);
+		String schemaFileName = cmd.getArgValue(Cli.ARG_SCHEMA);
+		int[] kValues = Arrays.stream(cmd.getArgValues(Cli.ARG_K))
+				.mapToInt(Integer::parseInt).toArray();
+		double[] rhoValues = Arrays.stream(cmd.getArgValues(Cli.ARG_RHO))
+				.mapToDouble(Double::parseDouble).toArray();
+		int[] numQueriesTested = Arrays
+				.stream(cmd.getArgValues(Cli.ARG_NUM_QUERIES))
+				.mapToInt(Integer::parseInt).toArray();
+		String[] selectedAttrs = cmd.getArgValues(Cli.ARG_ATTRS);
+		int dimensions = selectedAttrs.length;
 
-		EfficiencyTest irisTest = new EfficiencyTest(fileName, schema,
-				selectedAttrs);
+		// Start test
+		EfficiencyTest irisTest = new EfficiencyTest(datasetFileName,
+				schemaFileName, selectedAttrs);
 
 		List<String> constructionResult = new ArrayList<String>();
 		constructionResult.add("Dataset,K,Rho,Time");
-
-		int[] kValues = new int[]{2};
-		double[] rhoValues = new double[]{0.05, 0.1, 0.15};
 
 		for (int k : kValues) {
 			for (double rho : rhoValues) {
@@ -132,21 +131,18 @@ public class EfficiencyTest {
 				double constructionTime = irisTest.mithraConstructionTime(k,
 						rho);
 				constructionResult.add(String.format("%s,%d,%.3f,%.3f",
-						fileName, k, rho, constructionTime));
+						datasetFileName, k, rho, constructionTime));
 
 				// Query test
 				List<String> queryTimeResult = new ArrayList<String>();
 				queryTimeResult.add("Dataset,K,Rho,NumQueries,Dimensions,Time");
 
-				int[] numQueriesTested = new int[]{50, 100, 150, 200};
-				int dimensions = 2;
-
 				for (int numQueries : numQueriesTested) {
 					double queryTime = irisTest.mithraQueryTime(numQueries,
 							dimensions);
-					queryTimeResult.add(
-							String.format("%s,%d,%.3f,%d,%d,%.3f", fileName, k,
-									rho, numQueries, dimensions, queryTime));
+					queryTimeResult.add(String.format("%s,%d,%.3f,%d,%d,%.3f",
+							datasetFileName, k, rho, numQueries, dimensions,
+							queryTime));
 				}
 				for (String row : queryTimeResult)
 					System.out.println(row);

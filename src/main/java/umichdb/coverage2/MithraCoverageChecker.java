@@ -52,6 +52,8 @@ public class MithraCoverageChecker implements CoverageChecker {
 	int k;
 	double rho;
 
+	static final int TAU = 10;
+
 	/**
 	 * Find exact coverage
 	 * 
@@ -84,7 +86,7 @@ public class MithraCoverageChecker implements CoverageChecker {
 	 * @param numSamples
 	 */
 	public MithraCoverageChecker(DataFrame dataset, int k, double rho,
-			double epsilon, double delta) {
+			double epsilon, double phi) {
 		// Rescaling
 		scaler = Scaler.fit(dataset);
 		this.dataset = scaler.transform(dataset);
@@ -95,7 +97,7 @@ public class MithraCoverageChecker implements CoverageChecker {
 
 		// Create "s" many samples as observations to build a "decision tree"
 		// later
-		int numSamples = getNumSamples(dataset.size(), epsilon, delta);
+		int numSamples = getNumSamples(epsilon, phi);
 		DataFrame observations = Utils.genRandDataset(numSamples, this.d);
 		boolean[] labels = new boolean[observations.nrows()];
 
@@ -159,18 +161,29 @@ public class MithraCoverageChecker implements CoverageChecker {
 
 		this.coverageVoronoiDiagram = null;
 	}
-	
+
 	/**
-	 * Get number of samples given epsilon and delta (to be finished)
-	 * @param totalCount
+	 * Get number of samples given epsilon and delta using a fixed constant tau.
+	 * 
 	 * @param epsilon
-	 * @param delta
+	 * @param phi
 	 * @return
 	 */
-	private static int getNumSamples(int totalCount, double epsilon, double delta) {
-		double ratio = 1 / epsilon * Math.log(1/delta);
-		// TODO: finish this
-		return 0;
+	private static int getNumSamples(double epsilon, double phi) {
+		return (int) Math.ceil(1 / epsilon * Math.log(1 / phi) * TAU);
+	}
+
+	/**
+	 * Get number of samples given epsilon and delta, and a constant tau
+	 * (times).
+	 * 
+	 * @param totalCount
+	 * @param epsilon
+	 * @param phi
+	 * @return
+	 */
+	private static int getNumSamples(double epsilon, double phi, int tau) {
+		return (int) Math.ceil(1 / epsilon * Math.log(1 / phi) * tau);
 	}
 
 	/**
