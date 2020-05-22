@@ -69,7 +69,6 @@ public class Cli {
 		Option repeatOpt = new Option(ARG_REPEAT, true, MSG_NUM_REPEATS);
 		options.addOption(repeatOpt);
 
-		System.out.println(options);
 		parse();
 	}
 
@@ -98,6 +97,14 @@ public class Cli {
 	public String getArgValue(String argName) {
 		if (cmd.hasOption(argName))
 			return cmd.getOptionValue(argName);
+		try {
+			throw new Exception(String.format("getArgValue ERROR: Argument [%s] not found. Exit.", argName));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		help();
+		System.exit(0);
 		return null;
 	}
 	
@@ -109,6 +116,15 @@ public class Cli {
 	public String[] getArgValues(String argName) {
 		if (cmd.hasOption(argName))
 			return cmd.getOptionValues(argName);
+		
+		try {
+			throw new Exception(String.format("getArgValues ERROR: Argument [%s] not found. Exit.", argName));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		help();
+		System.exit(0);
 		return null;
 	}
 

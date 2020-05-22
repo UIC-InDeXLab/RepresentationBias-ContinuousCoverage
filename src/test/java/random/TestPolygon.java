@@ -1,4 +1,6 @@
-package umichdb.coverage2;
+package random;
+
+import umichdb.coverage2.Polygon2D;
 
 public class TestPolygon {
 	public static void main(String[] args) {

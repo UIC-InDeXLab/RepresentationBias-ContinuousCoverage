@@ -1,4 +1,4 @@
-package umichdb.coverage2;
+package random;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,6 +15,8 @@ import org.jfree.ui.RefineryUtilities;
 
 import smile.data.DataFrame;
 import smile.data.vector.BaseVector;
+import umichdb.coverage2.MithraCoverageChecker;
+import umichdb.coverage2.Utils;
 import umichdb.coverage2.MithraCoverageCheckerUI.Uiconfig;
 
 public class TestCoverageCheckerSampling {

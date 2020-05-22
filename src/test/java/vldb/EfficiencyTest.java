@@ -43,18 +43,30 @@ public class EfficiencyTest {
 
 	/**
 	 * Evaluate MithraCoverage construction time (in seconds)
-	 * 
 	 * @param k
 	 * @param rho
 	 * @return
 	 */
 	public double mithraConstructionTime(int k, double rho) {
+		return mithraConstructionTime(k, rho, 1);
+	}
+
+	/**
+	 * Evaluate average MithraCoverage construction time (in seconds)
+	 * 
+	 * @param k
+	 * @param rho
+	 * @return
+	 */
+	public double mithraConstructionTime(int k, double rho, int repeatTimes) {
 		double constructionBeginTime = System.currentTimeMillis();
 
-		mcc = new MithraCoverageChecker(df, k, rho);
+		for (int i = 0; i < repeatTimes; i++)
+			mcc = new MithraCoverageChecker(df, k, rho);
 
 		double constructionEndTime = System.currentTimeMillis();
-		return (constructionEndTime - constructionBeginTime) / 1000.0;
+		return (constructionEndTime - constructionBeginTime) / 1000.0
+				/ repeatTimes;
 	}
 
 	/**
@@ -69,8 +81,9 @@ public class EfficiencyTest {
 
 		double constructionBeginTime = System.currentTimeMillis();
 
-		for (BaseVector p : queryPoints) {
-			mcc.ifCovered(p.toDoubleArray(), false);
+		for (int i = 0; i < queryPoints.size(); i++) {
+			Tuple p = queryPoints.get(i);
+			mcc.ifCovered(p.toArray(), false);
 		}
 
 		double constructionEndTime = System.currentTimeMillis();
@@ -92,8 +105,9 @@ public class EfficiencyTest {
 
 		double constructionBeginTime = System.currentTimeMillis();
 
-		for (BaseVector p : queryPoints) {
-			bcc.ifCovered(p.toDoubleArray());
+		for (int i = 0; i < queryPoints.size(); i++) {
+			Tuple p = queryPoints.get(i);
+			bcc.ifCovered(p.toArray());
 		}
 
 		double constructionEndTime = System.currentTimeMillis();
@@ -114,6 +128,7 @@ public class EfficiencyTest {
 				.stream(cmd.getArgValues(Cli.ARG_NUM_QUERIES))
 				.mapToInt(Integer::parseInt).toArray();
 		String[] selectedAttrs = cmd.getArgValues(Cli.ARG_ATTRS);
+		int repeat = Integer.parseInt(cmd.getArgValue(Cli.ARG_REPEAT));
 		int dimensions = selectedAttrs.length;
 
 		// Start test
@@ -126,10 +141,8 @@ public class EfficiencyTest {
 		for (int k : kValues) {
 			for (double rho : rhoValues) {
 				// Construction test
-				System.out.println(String
-						.format("Efficiency test: k = %d, rho = %f", k, rho));
 				double constructionTime = irisTest.mithraConstructionTime(k,
-						rho);
+						rho, repeat);
 				constructionResult.add(String.format("%s,%d,%.3f,%.3f",
 						datasetFileName, k, rho, constructionTime));
 
@@ -138,6 +151,8 @@ public class EfficiencyTest {
 				queryTimeResult.add("Dataset,K,Rho,NumQueries,Dimensions,Time");
 
 				for (int numQueries : numQueriesTested) {
+					System.out.println(String
+							.format("Efficiency test: file=%s, k=%d, rho=%.3f, numQueries=%d, dim=%d", datasetFileName, k, rho, numQueries, dimensions));
 					double queryTime = irisTest.mithraQueryTime(numQueries,
 							dimensions);
 					queryTimeResult.add(String.format("%s,%d,%.3f,%d,%d,%.3f",

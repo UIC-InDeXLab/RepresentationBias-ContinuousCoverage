@@ -71,9 +71,23 @@ public class MithraCoverageChecker implements CoverageChecker {
 		this.k = k; // k points
 		this.rho = rho; // max distance to qualify as adjacent
 		this.d = dataset.ncols();
+		
+		if (this.d != 2) {
+			System.err.println("WARNING: the dimensionality of dataset is not 2. Better try approximate coverage checker");
+		}
 
 		// Create cache in the form of a Voronoi diagram
 		findVoronoi();
+		
+		for (int i = 0; i < this.dataset.size(); i++) {
+			Tuple p = this.dataset.get(i);
+			System.out.println(p.getDouble(0) + "," + p.getDouble(1));
+		}
+		System.out.println();
+		for (VoronoiPolygon p : coverageVoronoiDiagram.getPolygons()) {
+			System.out.println("Poly:" + p + " " + p.npoints);
+		}
+		
 		this.coverageDecisionTree = null;
 	}
 
@@ -196,8 +210,10 @@ public class MithraCoverageChecker implements CoverageChecker {
 			Tuple r = this.dataset.get(i);
 			Point2D newP = new Point2D(r.getDouble(0), r.getDouble(1));
 			point2dList.add(newP);
-		} ;
-
+		}
+		
+//		System.out.println("sites size: " + point2dList.size());
+//		System.out.println("first sites: " + point2dList.get(0));
 		this.coverageVoronoiDiagram = new VoronoiKOrder(point2dList, k, false);
 	}
 
@@ -281,10 +297,13 @@ public class MithraCoverageChecker implements CoverageChecker {
 			if (p.contains(x, y))
 				return p.regionKey;
 		}
+		
 
-		System.out.println(String.format(
-				"ERROR: (%.2f,%.2f) is not found in any voronoi polygon", x,
+		System.err.println(String.format(
+				"getContainingVoronoiPolyKey ERROR: (%.2f,%.2f) is not found in any voronoi polygon", x,
 				y));
+		System.err.print("Number of polygons: " + coverageVoronoiDiagram.getPolygons().size());
+		System.exit(1);
 		return null;
 	}
 

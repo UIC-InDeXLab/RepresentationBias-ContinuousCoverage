@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.commons.csv.CSVFormat;
 
 import smile.data.DataFrame;
+import smile.data.Tuple;
 import smile.data.measure.NominalScale;
 import smile.data.type.DataTypes;
 import smile.data.type.StructField;
@@ -50,9 +51,10 @@ public class AccuracyTest {
 		DataFrame queryPoints = Utils.genRandDataset(numQueries, d);
 
 		double truePositiveCount = 0;
-		for (BaseVector p : queryPoints) {
-			if (approximateMCC.ifCovered(p.toDoubleArray(), false) == bcc
-					.ifCovered(p.toDoubleArray()))
+		for (int i = 0; i < queryPoints.size(); i++) {
+			Tuple p = queryPoints.get(i);
+			if (approximateMCC.ifCovered(p.toArray(), false) == bcc
+					.ifCovered(p.toArray()))
 				truePositiveCount++;
 		}
 
