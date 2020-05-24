@@ -51,6 +51,7 @@ class Point2D implements Comparable<Point2D> {
 			return -1;
 		if (getY() > other.getY())
 			return 1;
+
 		return 0;
 	}
 
@@ -146,8 +147,8 @@ class Point2D implements Comparable<Point2D> {
 
 // PointSet is an ordered set op Point2D (implemented as a
 // TreeSet) with two important features:
-// - PointSets are orderd by size and contents
-// - they provide a convenient metod to find a neghbour
+// - PointSets are ordered by size and contents
+// - they provide a convenient method to find a neighbor
 class PointSet extends TreeSet<Point2D> implements Comparable<PointSet> {
 	// just for consistency with compareTo
 	public boolean equals(Object other) {

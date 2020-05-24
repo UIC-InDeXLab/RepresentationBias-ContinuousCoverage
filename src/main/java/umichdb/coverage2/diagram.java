@@ -236,21 +236,7 @@ class VEdge implements Comparable<VEdge>, KCircle {
 // (2) set up the sets of relevant and critical points by adding points
 // (3) invoke the complete(...) method (see below)
 class VVertex extends Point2D implements KCircle {
-	// This class is used to sort the critical points by their position
-	// on the circle around the vertex
-	class AngleComparator implements Comparator<Point2D> {
-		public AngleComparator(Point2D center) {
-			this.center = center;
-		}
-		public int compare(Point2D p1, Point2D p2) {
-			double dx1 = p1.getX() - center.getX(),
-					dy1 = p1.getY() - center.getY(),
-					dx2 = p2.getX() - center.getX(),
-					dy2 = p2.getY() - center.getY();
-			return Point2D.compareAngle(dx1, dy1, dx2, dy2);
-		}
-		Point2D center;
-	}
+
 
 	public VVertex(Point2D p, boolean relevantInside) {
 		super(p);
@@ -259,11 +245,18 @@ class VVertex extends Point2D implements KCircle {
 		relevant = new PointSet();
 	}
 
-	// This method should be called after the vertex has been constructed and
-	// all points have been added to the critical and relevant sets. It checks
-	// the todo set for incident edges (constructing them if they don't exist)
-	// and connects them. The cases of finite and infinite vertices are treated
-	// differently.
+	/**
+	 * This method should be called after the vertex has been constructed and
+	 * all points have been added to the critical and relevant sets. It checks
+	 * the todo set for incident edges (constructing them if they don't exist)
+	 * and connects them. The cases of finite and infinite vertices are treated
+	 * differently.
+	 * 
+	 * @param n
+	 * @param k
+	 * @param todo
+	 * @param edges
+	 */
 	public void complete(int n, int k, TreeMap<VEdge, VEdge> todo,
 			Set<VEdge> edges) {
 		edgeList = new Vector<VEdge>();
@@ -274,15 +267,19 @@ class VVertex extends Point2D implements KCircle {
 		// if the vertex is at infinity, the lexicographic order is fine;
 		// otherwise
 		// sort by angle
-		if (isAtInfinity())
+		
+		if (isAtInfinity()) {
 			sortedCritical = critical;
-		else {
+		} else {
 			sortedCritical = new PointSet(new AngleComparator(this));
 			sortedCritical.addAll(critical);
 		}
+
 		Iterator<Point2D> j = sortedCritical.iterator();
-		for (int i = 0; i < critical.size(); i++)
+
+		for (int i = 0; i < critical.size(); i++) {
 			orderedCritical[i] = j.next();
+		}
 		int distance = relevantInside
 				? (k - relevant.size())
 				: (k - (n - critical.size() - relevant.size()));
@@ -477,7 +474,7 @@ class VoronoiPolygon extends Polygon2D {
 // far mode: in near mode, the order k is held constant (if possible), whereas
 // in far mode it is increased when a point is added and decreased when a point
 // is removed.
-// The algorithm is described in my thesis; I'd jus like to note that it
+// The algorithm is described in my thesis; I'd just like to note that it
 // constructs
 // a diagram from scratch in O(k(n-k)nlogn), but is usually faster
 // adding/removing/
@@ -857,7 +854,8 @@ class VoronoiKOrder {
 
 		while (todo.size() > 0) {
 			// Again, the emergency stop. If the maximum number of iterations is
-			// reached, we give it a second try, but this time we re-compute the diagram
+			// reached, we give it a second try, but this time we re-compute the
+			// diagram
 			// from scratch.
 			// If this fails as well, we return an empty diagram. So, if you
 			// move a point around
@@ -867,7 +865,7 @@ class VoronoiKOrder {
 				todo.clear();
 				edges.clear();
 				vertices.clear();
-				System.out.println("ERROR");
+				System.out.println("Vironoi diagram construction ERROR");
 				if (!error)
 					createGraph(true);
 				return;
@@ -949,6 +947,7 @@ class VoronoiKOrder {
 			}
 			newVertex.getCritical().add(current.critical1);
 			newVertex.getCritical().add(current.critical2);
+
 			addVertex(newVertex);
 		}
 	}
@@ -1033,12 +1032,12 @@ class VoronoiKOrder {
 	 */
 	void findPolygons() {
 		if (this.polygonKeyToPolygon.isEmpty()) {
-			HashMap<PointSet, Set<Point2D>> tempPolyVertex = new HashMap<PointSet,Set<Point2D>>();
+			HashMap<PointSet, Set<Point2D>> tempPolyVertex = new HashMap<PointSet, Set<Point2D>>();
 
 			for (VEdge e : this.edges) {
 				double i1 = e.v1.getX(), i2 = e.v1.getY(), i3 = e.v2.getX(),
 						i4 = e.v2.getY();
-				double x1 = i1, y1=i2, x2=i3, y2=i4;
+				double x1 = i1, y1 = i2, x2 = i3, y2 = i4;
 
 				if (e.v1.isAtInfinity() && e.v2.isAtInfinity()) {
 					double dx = (i2 - i4) * 5000;
@@ -1067,8 +1066,8 @@ class VoronoiKOrder {
 				PointSet polygon1Key = new PointSet();
 				polygon1Key.add(e.critical1);
 				polygon1Key.addAll(e.relevant);
-				Set<Point2D> poly1 = tempPolyVertex.getOrDefault(
-						polygon1Key, new HashSet<Point2D>());
+				Set<Point2D> poly1 = tempPolyVertex.getOrDefault(polygon1Key,
+						new HashSet<Point2D>());
 
 				poly1.add(new Point2D(x1, y1));
 				poly1.add(new Point2D(x2, y2));
@@ -1077,46 +1076,50 @@ class VoronoiKOrder {
 				PointSet polygon2Key = new PointSet();
 				polygon2Key.add(e.critical2);
 				polygon2Key.addAll(e.relevant);
-				Set<Point2D> poly2 = tempPolyVertex.getOrDefault(
-						polygon2Key, new HashSet<Point2D>());
+				Set<Point2D> poly2 = tempPolyVertex.getOrDefault(polygon2Key,
+						new HashSet<Point2D>());
 				poly2.add(new Point2D(x1, y1));
 				poly2.add(new Point2D(x2, y2));
 				tempPolyVertex.put(polygon2Key, poly2);
-			}		
-			
+			}
+
 			// Add polygons
-			for (Map.Entry<PointSet, Set<Point2D>> e : tempPolyVertex.entrySet()) {
+			for (Map.Entry<PointSet, Set<Point2D>> e : tempPolyVertex
+					.entrySet()) {
 				VoronoiPolygon poly = new VoronoiPolygon(e.getKey());
 				List<Point2D> vertices = new ArrayList<Point2D>(e.getValue());
 				// Sort vertices clockwise
-				double xMean = vertices.stream().mapToDouble(v -> v.getX()).average().orElse(0);
-				double yMean = vertices.stream().mapToDouble(v -> v.getY()).average().orElse(0);
+				double xMean = vertices.stream().mapToDouble(v -> v.getX())
+						.average().orElse(0);
+				double yMean = vertices.stream().mapToDouble(v -> v.getY())
+						.average().orElse(0);
 				Point2D center = new Point2D(xMean, yMean);
-				
+
 				Collections.sort(vertices, (a, b) -> {
-		    
-				    double angle0 = angleToX(
-		                    center.getX(), center.getY(), a.getX(), a.getY());
-		                double angle1 = angleToX(
-		                    center.getX(), center.getY(), b.getX(), b.getY());
-		                return Double.compare(angle1, angle0);
-				});				
+
+					double angle0 = angleToX(center.getX(), center.getY(),
+							a.getX(), a.getY());
+					double angle1 = angleToX(center.getX(), center.getY(),
+							b.getX(), b.getY());
+					return Double.compare(angle1, angle0);
+				});
+				
+				System.out.println("vertices: " + vertices);
 				// Sort vertices (end)
-				vertices.stream().forEach(v -> poly.addPoint(v.getX(), v.getY()));
+				vertices.stream()
+						.forEach(v -> poly.addPoint(v.getX(), v.getY()));
+
 				this.polygonKeyToPolygon.put(e.getKey(), poly);
 			}
 		}
 	}
-	
-	
-	private static double angleToX(
-	        double x0, double y0, double x1, double y1)
-	    {
-	        double dx = x1 - x0;
-	        double dy = y1 - y0;
-	        double angleRad = Math.atan2(dy, dx); 
-	        return angleRad;
-	    }
+
+	private static double angleToX(double x0, double y0, double x1, double y1) {
+		double dx = x1 - x0;
+		double dy = y1 - y0;
+		double angleRad = Math.atan2(dy, dx);
+		return angleRad;
+	}
 
 	/**
 	 * Get all polygons in this Voronoi diagram

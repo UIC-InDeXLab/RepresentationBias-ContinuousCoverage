@@ -38,6 +38,9 @@ public class EfficiencyTest {
 	public EfficiencyTest(String dataFileName, String schemaFileName,
 			String[] selectedAttrs) {
 		this.df = Utils.loadDataSetFromCSV(dataFileName, schemaFileName);
+		
+//		this.df = this.df.slice(0, 30);		// For debugging
+
 		this.df = this.df.select(selectedAttrs);
 	}
 
@@ -164,6 +167,7 @@ public class EfficiencyTest {
 			}
 		}
 
+		// Print final output
 		for (String row : constructionResult)
 			System.out.println(row);
 

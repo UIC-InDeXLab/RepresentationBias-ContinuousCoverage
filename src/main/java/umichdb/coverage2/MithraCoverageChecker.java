@@ -79,14 +79,14 @@ public class MithraCoverageChecker implements CoverageChecker {
 		// Create cache in the form of a Voronoi diagram
 		findVoronoi();
 		
-		for (int i = 0; i < this.dataset.size(); i++) {
-			Tuple p = this.dataset.get(i);
-			System.out.println(p.getDouble(0) + "," + p.getDouble(1));
-		}
-		System.out.println();
-		for (VoronoiPolygon p : coverageVoronoiDiagram.getPolygons()) {
-			System.out.println("Poly:" + p + " " + p.npoints);
-		}
+//		for (int i = 0; i < this.dataset.size(); i++) {
+//			Tuple p = this.dataset.get(i);
+//			System.out.println(String.format("Data: %.3f, %.3f", p.getDouble(0), p.getDouble(1)));
+//		}
+//		System.out.println();
+//		for (VoronoiPolygon p : coverageVoronoiDiagram.getPolygons()) {
+//			System.out.println("Poly:" + p + " " + p.npoints);
+//		}
 		
 		this.coverageDecisionTree = null;
 	}
@@ -211,9 +211,7 @@ public class MithraCoverageChecker implements CoverageChecker {
 			Point2D newP = new Point2D(r.getDouble(0), r.getDouble(1));
 			point2dList.add(newP);
 		}
-		
-//		System.out.println("sites size: " + point2dList.size());
-//		System.out.println("first sites: " + point2dList.get(0));
+
 		this.coverageVoronoiDiagram = new VoronoiKOrder(point2dList, k, false);
 	}
 
@@ -294,15 +292,22 @@ public class MithraCoverageChecker implements CoverageChecker {
 	 */
 	public PointSet getContainingVoronoiPolyKey(double x, double y) {
 		for (VoronoiPolygon p : coverageVoronoiDiagram.getPolygons()) {
-			if (p.contains(x, y))
+			if (p.contains(x, y)) {
+				System.out.println(String.format("Voronoi poly found: (%.2f,%.2f) is not found in any voronoi polygon", x, y));
 				return p.regionKey;
+			}
 		}
-		
+		try {
+			throw new Exception(String.format("Exception: (%.2f,%.2f) is not found in any voronoi polygon", x, y));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
-		System.err.println(String.format(
-				"getContainingVoronoiPolyKey ERROR: (%.2f,%.2f) is not found in any voronoi polygon", x,
-				y));
-		System.err.print("Number of polygons: " + coverageVoronoiDiagram.getPolygons().size());
+//		System.err.println(String.format(
+//				"getContainingVoronoiPolyKey ERROR: (%.2f,%.2f) is not found in any voronoi polygon", x,
+//				y));
+//		System.err.print("Number of polygons: " + coverageVoronoiDiagram.getPolygons().size());
 		System.exit(1);
 		return null;
 	}
