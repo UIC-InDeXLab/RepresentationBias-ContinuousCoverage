@@ -381,9 +381,9 @@ public class Polygon2D implements Shape, Cloneable, Serializable {
 	 *         specified coordinates; <code>false</code> otherwise.
 	 */
 	public boolean contains(double x, double y) {
-		//// Mark commented this out because bounds.contains sometimes gives a wrong answer due to the double precision. 
-//		if (npoints <= 2 || !bounds.contains(x, y)) {
-		if (npoints <= 2) {
+		
+		if (npoints <= 2 || !bounds.contains(x, y)) { // Mark: Comment this out and use the code below if it gives a wrong answer due to the double precision. 
+//		if (npoints <= 2) { 
 			return false;
 		}
 		updateComputingPath();
