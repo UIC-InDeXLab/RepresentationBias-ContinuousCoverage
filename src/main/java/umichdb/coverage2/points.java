@@ -25,6 +25,7 @@ import java.util.*;
 //- then come the finite points, ordered lexicographically 
 class Point2D implements Comparable<Point2D> {
 	// just for consistency with compareTo
+	@Override
 	public boolean equals(Object other) {
 		if (other == null)
 			return false;
@@ -32,8 +33,16 @@ class Point2D implements Comparable<Point2D> {
 			return compareTo((Point2D) other) == 0;
 		return other.equals(this);
 	}
+	
+	/**
+	 * Mark added a hashCode override here.
+	 */
+	@Override
+    public int hashCode() {
+		return Objects.hash(this.getX(), this.getY());
+	}
 
-	// required for keeping points in orderd sets and maps
+	// required for keeping points in ordered sets and maps
 	public int compareTo(Point2D other) {
 		if (isAtInfinity()) {
 			if (!other.isAtInfinity())
@@ -137,7 +146,7 @@ class Point2D implements Comparable<Point2D> {
 
 	@Override
 	public String toString() {
-		return "(" + String.format("%.2f", this.getX())  + "," + String.format("%.2f", this.getY()) + ")";
+		return "(" + String.format("%.3f", this.getX())  + "," + String.format("%.3f", this.getY()) + ")";
 	}
 
 	// the actual information:

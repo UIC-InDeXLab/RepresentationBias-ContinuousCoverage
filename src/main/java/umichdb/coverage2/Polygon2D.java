@@ -30,6 +30,7 @@ import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 /**
  * This class is a Polygon with double coordinates.
@@ -231,10 +232,10 @@ public class Polygon2D implements Shape, Cloneable, Serializable {
 			bounds = new Rectangle2D.Double(x, y, 0, 0);
 		} else {
 			path.lineTo(x, y);
-			double _xmax = (double) bounds.getMaxX();
-			double _ymax = (double) bounds.getMaxY();
-			double _xmin = (double) bounds.getMinX();
-			double _ymin = (double) bounds.getMinY();
+			double _xmax = bounds.getMaxX();
+			double _ymax = bounds.getMaxY();
+			double _xmin = bounds.getMinX();
+			double _ymin = bounds.getMinY();
 			if (x < _xmin)
 				_xmin = x;
 			else if (x > _xmax)
@@ -380,7 +381,9 @@ public class Polygon2D implements Shape, Cloneable, Serializable {
 	 *         specified coordinates; <code>false</code> otherwise.
 	 */
 	public boolean contains(double x, double y) {
-		if (npoints <= 2 || !bounds.contains(x, y)) {
+		//// Mark commented this out because bounds.contains sometimes gives a wrong answer due to the double precision. 
+//		if (npoints <= 2 || !bounds.contains(x, y)) {
+		if (npoints <= 2) {
 			return false;
 		}
 		updateComputingPath();
@@ -542,7 +545,7 @@ public class Polygon2D implements Shape, Cloneable, Serializable {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < this.npoints; i++) {
-			sb.append(String.format("(%.2f %.2f),", xpoints[i], ypoints[i]));
+			sb.append(String.format("(%.3f,%.3f),", xpoints[i], ypoints[i]));
 		}
 		return sb.toString();
 	}

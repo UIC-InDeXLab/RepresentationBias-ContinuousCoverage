@@ -57,25 +57,29 @@ public class MithraCoverageChecker implements CoverageChecker {
 	/**
 	 * Find exact coverage
 	 * 
-	 * @param dataset
+	 * @param rawDataset
 	 * @param k
 	 *            (minimum number of data points within rho distance to qualify
 	 *            as covered)
 	 * @param rho
 	 *            (distance)
 	 */
-	public MithraCoverageChecker(DataFrame dataset, int k, double rho) {
+	public MithraCoverageChecker(DataFrame rawDataset, int k, double rho) {
 		// Rescaling
-		scaler = Scaler.fit(dataset);
-		this.dataset = scaler.transform(dataset);
+		scaler = Scaler.fit(rawDataset);
+		this.dataset = scaler.transform(rawDataset);
 		this.k = k; // k points
 		this.rho = rho; // max distance to qualify as adjacent
-		this.d = dataset.ncols();
+		this.d = rawDataset.ncols();
 		
 		if (this.d != 2) {
 			System.err.println("WARNING: the dimensionality of dataset is not 2. Better try approximate coverage checker");
 		}
 
+		
+		
+		System.out.println("[debug] dataset" + this.dataset);
+		
 		// Create cache in the form of a Voronoi diagram
 		findVoronoi();
 		
@@ -293,17 +297,35 @@ public class MithraCoverageChecker implements CoverageChecker {
 	public PointSet getContainingVoronoiPolyKey(double x, double y) {
 		for (VoronoiPolygon p : coverageVoronoiDiagram.getPolygons()) {
 			if (p.contains(x, y)) {
-				System.out.println(String.format("Voronoi poly found: (%.2f,%.2f) is not found in any voronoi polygon", x, y));
 				return p.regionKey;
 			}
 		}
 		try {
-			throw new Exception(String.format("Exception: (%.2f,%.2f) is not found in any voronoi polygon", x, y));
+			throw new Exception(String.format("Exception: (%.3f,%.3f) is not found in any voronoi polygon", x, y));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		double minDist = Double.MAX_VALUE;
+		Tuple closestP = null;
+		
+		for (int i = 0; i < this.dataset.size(); i++) {
+			Tuple t = this.dataset.get(i);
+			
+			double dist = (t.getDouble(0) - x) * (t.getDouble(0) - x)  + (t.getDouble(1) - y)  * (t.getDouble(1) - y);
+			
+			if (dist < minDist) {
+				minDist = dist;
+				closestP = t;
+			}
+		}
+		
+		System.out.println("closest p:" + closestP);
 
+	
+		
+		
 //		System.err.println(String.format(
 //				"getContainingVoronoiPolyKey ERROR: (%.2f,%.2f) is not found in any voronoi polygon", x,
 //				y));

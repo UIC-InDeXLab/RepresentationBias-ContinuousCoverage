@@ -57,9 +57,48 @@ interface KCircle {
 // The order of the critical points critical1 and critical2 is important,
 // as it defines the direction in which their bisector is to be
 // searched for the next vertex (as long as v1 or v2 is null).
-// Therefor, this order is switched whenever a new vertex is connected
+// Therefore, this order is switched whenever a new vertex is connected
 // or disconnected.
 class VEdge implements Comparable<VEdge>, KCircle {
+	// the state of the edge:
+	public PointSet relevant;
+	public VVertex v1, v2;
+	public Point2D critical1, critical2;
+	public Point2D pointInside;
+
+	private Set<VEdge> edges;
+	private TreeMap<VEdge, VEdge> todo;
+	private boolean relevantInside;
+
+	// constructor: the critical points must be provided at construction time;
+	// the sets todo and edges
+	// are provided so that an edge can automatically remove or add itself when
+	// a vertex is connected or
+	// disconnected. After construction, the new edge must be added to todo
+	// manually once the relevant
+	// points have been added.
+	public VEdge(Point2D p1, Point2D p2, TreeMap<VEdge, VEdge> todo,
+			Set<VEdge> edges, boolean relevantInside) {
+		this.edges = edges;
+		this.todo = todo;
+		critical1 = p1;
+		critical2 = p2;
+		v1 = v2 = null;
+		relevant = new PointSet();
+		pointInside = null;
+		this.relevantInside = relevantInside;
+	}
+
+	/**
+	 * To print a VEdge
+	 */
+	public String toString() {
+		return String.format(
+				"Crtitical(%s,%s); End points(%s,%s); Relevant(%s); PtsInside(%s), #edges(%d)",
+				this.critical1, this.critical2, this.v1, this.v2, this.relevant,
+				this.pointInside, this.edges.size());
+	}
+
 	// for consitency with compareTo
 	public boolean equals(Object other) {
 		if (other == null)
@@ -90,25 +129,6 @@ class VEdge implements Comparable<VEdge>, KCircle {
 		if (critical1.compareTo(critical2) < 0)
 			return critical2;
 		return critical1;
-	}
-
-	// constructor: the critical points must be provided at construction time;
-	// the sets todo and edges
-	// are provided so that an edge can automatically remove or add itself when
-	// a vertex is connected or
-	// disconnected. After construction, the new edge must be added to todo
-	// manually once the relevant
-	// points have been added.
-	public VEdge(Point2D p1, Point2D p2, TreeMap<VEdge, VEdge> todo,
-			Set<VEdge> edges, boolean relevantInside) {
-		this.edges = edges;
-		this.todo = todo;
-		critical1 = p1;
-		critical2 = p2;
-		v1 = v2 = null;
-		relevant = new PointSet();
-		pointInside = null;
-		this.relevantInside = relevantInside;
 	}
 
 	// the following methods are required by the interface KCircle
@@ -192,8 +212,8 @@ class VEdge implements Comparable<VEdge>, KCircle {
 		return null;
 	}
 
-	// replace a point in the set of relevant points; thsi is
-	// used when a point is moved; as thsi affects the ordering
+	// replace a point in the set of relevant points; this is
+	// used when a point is moved; as this affects the ordering
 	// the edge must be removed from the respective ordered set
 	// before the operation.
 	public void replaceRelevant(Point2D po, Point2D pn) {
@@ -211,15 +231,6 @@ class VEdge implements Comparable<VEdge>, KCircle {
 			todo.put(this, this);
 	}
 
-	// the state of the edge:
-	public PointSet relevant;
-	public VVertex v1, v2;
-	public Point2D critical1, critical2;
-	public Point2D pointInside;
-
-	private Set<VEdge> edges;
-	private TreeMap<VEdge, VEdge> todo;
-	private boolean relevantInside;
 }
 
 // VVertex is the a vertex of a higher order Voronoi diagram. It is
@@ -236,7 +247,6 @@ class VEdge implements Comparable<VEdge>, KCircle {
 // (2) set up the sets of relevant and critical points by adding points
 // (3) invoke the complete(...) method (see below)
 class VVertex extends Point2D implements KCircle {
-
 
 	public VVertex(Point2D p, boolean relevantInside) {
 		super(p);
@@ -267,7 +277,7 @@ class VVertex extends Point2D implements KCircle {
 		// if the vertex is at infinity, the lexicographic order is fine;
 		// otherwise
 		// sort by angle
-		
+
 		if (isAtInfinity()) {
 			sortedCritical = critical;
 		} else {
@@ -493,7 +503,7 @@ class VoronoiKOrder {
 	// these variables contain all relevant information about the diagram
 	int k;
 	boolean kIsConstant;
-	PointSet S;
+	PointSet sites;
 	TreeSet<VEdge> edges;
 	PointSet vertices;
 
@@ -506,7 +516,7 @@ class VoronoiKOrder {
 	public VoronoiKOrder() {
 		kIsConstant = true;
 		k = 1;
-		S = new PointSet();
+		sites = new PointSet();
 		edges = new TreeSet<VEdge>();
 		vertices = new PointSet();
 
@@ -523,8 +533,8 @@ class VoronoiKOrder {
 			this.k = 1;
 		else if (this.k >= S.size())
 			this.k = S.size() - 1;
-		this.S = new PointSet();
-		this.S.addAll(S);
+		this.sites = new PointSet();
+		this.sites.addAll(S);
 		edges = new TreeSet<VEdge>();
 		vertices = new PointSet();
 
@@ -562,25 +572,25 @@ class VoronoiKOrder {
 
 	// complete a vertex and add it to the set vertices
 	private void addVertex(VVertex v) {
-		v.complete(S.size(), k, todo, edges);
+		v.complete(sites.size(), k, todo, edges);
 		vertices.add(v);
 	}
 
 	// this method finds a first edge (or vertex) that is needed to
 	// get the algorithm started and adds it to todo. O(n) time.
 	private void findStartingEdge() {
-		if (k + 1 > S.size())
+		if (k + 1 > sites.size())
 			return; // nothing to do...
 
 		// the method proceeds in four steps:
 		// (1) find a point "center" that is not in S and sort all points in
 		// S by their distance to this point:
 		TreeMap<Double, PointSet> dist = new TreeMap<Double, PointSet>();
-		Iterator<Point2D> i = S.iterator();
+		Iterator<Point2D> i = sites.iterator();
 		Point2D center;
 		do {
 			center = new Point2D(0.5, Math.random());
-		} while (S.contains(center));
+		} while (sites.contains(center));
 		while (i.hasNext()) {
 			Point2D next = i.next();
 			Double newKey = Double.valueOf(center.dist2(next));
@@ -650,12 +660,12 @@ class VoronoiKOrder {
 			VVertex firstVertex = new VVertex(circleCenter, true);
 			firstVertex.getCritical().addAll(C);
 			firstVertex.getRelevant().addAll(H);
-			firstVertex.setRelevantInside(kIsConstant, S);
+			firstVertex.setRelevantInside(kIsConstant, sites);
 			addVertex(firstVertex);
 		} else {
 			VEdge firstEdge = new VEdge(C.first(), C.last(), todo, edges, true);
 			firstEdge.relevant.addAll(H);
-			firstEdge.setRelevantInside(kIsConstant, S);
+			firstEdge.setRelevantInside(kIsConstant, sites);
 			firstEdge.pointInside = circleCenter;
 			todo.put(firstEdge, firstEdge);
 		}
@@ -842,7 +852,7 @@ class VoronoiKOrder {
 	// This is where the actual construction takes place
 	private void createGraph(boolean error) {
 		// if there is nothing in the "todo" list, try to find a starting edge
-		if ((todo.size() == 0) && (S.size() > k) && (edges.size() == 0))
+		if ((todo.size() == 0) && (sites.size() > k) && (edges.size() == 0))
 			findStartingEdge();
 
 		// This is to prevent the algorithm from hanging if something goes
@@ -850,7 +860,7 @@ class VoronoiKOrder {
 		// emergencyStop is the maximum number of iterations allowed until the
 		// loop is forcefully stopped. To jump without parachute, set
 		// emergencyStop=-1.
-		int emergencyStop = (S.size() * (S.size() - k) + 100) * 3;
+		int emergencyStop = (sites.size() * (sites.size() - k) + 100) * 3;
 
 		while (todo.size() > 0) {
 			// Again, the emergency stop. If the maximum number of iterations is
@@ -885,7 +895,7 @@ class VoronoiKOrder {
 			// excludeCritical is used to acoid checking critical points of the
 			// current edge (or the vertex from which we start to search);
 			// this is important for numerical reasons and spares us from
-			// detecting surious vertices
+			// detecting serious vertices
 			Point2D cutOffPoint;
 			KCircle excludeCritical;
 			if (current.v1 == null) {
@@ -907,7 +917,7 @@ class VoronoiKOrder {
 			// That's O(n) of course, so check my thesis to find out about
 			// improving this critical part of the algorithm
 			// making use of a first order Voronoi diagram.
-			for (Iterator<Point2D> i = S.iterator(); i.hasNext();) {
+			for (Iterator<Point2D> i = sites.iterator(); i.hasNext();) {
 				Point2D testPoint = i.next();
 				if (!excludeCritical.isCritical(testPoint)) // should the point
 															// be checked?
@@ -956,21 +966,21 @@ class VoronoiKOrder {
 
 	// add a point to S and recompute the diagram
 	public void addPoint(Point2D p) {
-		if (S.contains(p))
+		if (sites.contains(p))
 			return;
 		removeGraph(null, p);
-		S.add(p);
-		if (!kIsConstant && (k < S.size() - 1))
+		sites.add(p);
+		if (!kIsConstant && (k < sites.size() - 1))
 			k++;
 		createGraph();
 	}
 
 	// remove a point from S and recompute the diagram
 	public void removePoint(Point2D p) {
-		if (!S.contains(p))
+		if (!sites.contains(p))
 			return;
 		removeGraph(p, null);
-		S.remove(p);
+		sites.remove(p);
 		if (!kIsConstant && (k > 1))
 			k--;
 		createGraph();
@@ -978,17 +988,17 @@ class VoronoiKOrder {
 
 	// move a point and recompute the diagram
 	public void movePoint(Point2D po, Point2D pn) {
-		if (!S.contains(po) || S.contains(pn))
+		if (!sites.contains(po) || sites.contains(pn))
 			return;
 		removeGraph(po, pn);
-		S.remove(po);
-		S.add(pn);
+		sites.remove(po);
+		sites.add(pn);
 		createGraph();
 	}
 
 	// clear S and the diagram
 	public void clear() {
-		S.clear();
+		sites.clear();
 		edges.clear();
 		vertices.clear();
 		k = 1;
@@ -1003,21 +1013,21 @@ class VoronoiKOrder {
 		while (edges.size() > 0) {
 			VEdge e = edges.first();
 			edges.remove(e);
-			e.setRelevantInside(kIsConstant, S);
+			e.setRelevantInside(kIsConstant, sites);
 			e.setEdges(newEdges);
 			newEdges.add(e);
 		}
 		edges = newEdges;
 		for (Iterator<Point2D> i = vertices.iterator(); i.hasNext();)
-			((VVertex) (i.next())).setRelevantInside(kIsConstant, S);
+			((VVertex) (i.next())).setRelevantInside(kIsConstant, sites);
 	}
 
 	// change the order of the diagram and recompute it
 	public void changeOrder(int newK) {
 		k = newK;
-		if ((k > 1) && (k > S.size() - 1)) {
-			k = Math.max(1, S.size() - 1);
-			System.out.print("WARNING: " + newK + ">" + (S.size() - 1)
+		if ((k > 1) && (k > sites.size() - 1)) {
+			k = Math.max(1, sites.size() - 1);
+			System.out.print("WARNING: " + newK + ">" + (sites.size() - 1)
 					+ "; k is set to " + k);
 		}
 		if (k < 1)
@@ -1028,13 +1038,18 @@ class VoronoiKOrder {
 	}
 
 	/**
-	 * Discover all polygons in the Voronoi graph
+	 * Discover all polygons in the Voronoi graph Each edge will create two
+	 * polygons. We take one critical point plus all relevant points as the key
+	 * to each polygon.
+	 * 
+	 * Mark created
 	 */
 	void findPolygons() {
 		if (this.polygonKeyToPolygon.isEmpty()) {
 			HashMap<PointSet, Set<Point2D>> tempPolyVertex = new HashMap<PointSet, Set<Point2D>>();
 
 			for (VEdge e : this.edges) {
+
 				double i1 = e.v1.getX(), i2 = e.v1.getY(), i3 = e.v2.getX(),
 						i4 = e.v2.getY();
 				double x1 = i1, y1 = i2, x2 = i3, y2 = i4;
@@ -1081,11 +1096,23 @@ class VoronoiKOrder {
 				poly2.add(new Point2D(x1, y1));
 				poly2.add(new Point2D(x2, y2));
 				tempPolyVertex.put(polygon2Key, poly2);
+
+				System.out.println(
+						"[debug] poly1:" + polygon1Key + " -> " + poly1);
+
+				System.out.println("\tAdd " + e.v1 + " "
+						+  e.v2);
+
+				System.out.println(
+						"[debug] poly2:" + polygon2Key + " -> " + poly2);
+				System.out.println("\tAdd " +  e.v1 + " "
+						+  e.v2);
 			}
 
 			// Add polygons
 			for (Map.Entry<PointSet, Set<Point2D>> e : tempPolyVertex
 					.entrySet()) {
+
 				VoronoiPolygon poly = new VoronoiPolygon(e.getKey());
 				List<Point2D> vertices = new ArrayList<Point2D>(e.getValue());
 				// Sort vertices clockwise
@@ -1103,13 +1130,14 @@ class VoronoiKOrder {
 							b.getX(), b.getY());
 					return Double.compare(angle1, angle0);
 				});
-				
-				System.out.println("vertices: " + vertices);
+
 				// Sort vertices (end)
 				vertices.stream()
 						.forEach(v -> poly.addPoint(v.getX(), v.getY()));
 
 				this.polygonKeyToPolygon.put(e.getKey(), poly);
+
+				System.out.println("[debug] final ploygon:" + " - " + poly);
 			}
 		}
 	}
@@ -1133,7 +1161,7 @@ class VoronoiKOrder {
 
 	// return the size of S and the order k
 	public int getN() {
-		return S.size();
+		return sites.size();
 	}
 	public int getK() {
 		return k;
@@ -1141,7 +1169,7 @@ class VoronoiKOrder {
 
 	// grant access to the elements of the diagram:
 	public PointSet getS() {
-		return S;
+		return sites;
 	}
 	public Set<VEdge> getEdges() {
 		return edges;

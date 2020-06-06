@@ -42,6 +42,7 @@ public class EfficiencyTest {
 //		this.df = this.df.slice(0, 30);		// For debugging
 
 		this.df = this.df.select(selectedAttrs);
+
 	}
 
 	/**
