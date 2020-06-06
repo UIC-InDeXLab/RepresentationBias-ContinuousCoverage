@@ -69,7 +69,7 @@ class VEdge implements Comparable<VEdge>, KCircle {
 	private Set<VEdge> edges;
 	private TreeMap<VEdge, VEdge> todo;
 	private boolean relevantInside;
-
+	
 	// constructor: the critical points must be provided at construction time;
 	// the sets todo and edges
 	// are provided so that an edge can automatically remove or add itself when
@@ -507,6 +507,7 @@ class VoronoiKOrder {
 	TreeSet<VEdge> edges;
 	PointSet vertices;
 
+	// Add polygons dictated by key point set
 	HashMap<PointSet, VoronoiPolygon> polygonKeyToPolygon;
 
 	// todo is only used during the construction
@@ -1096,17 +1097,6 @@ class VoronoiKOrder {
 				poly2.add(new Point2D(x1, y1));
 				poly2.add(new Point2D(x2, y2));
 				tempPolyVertex.put(polygon2Key, poly2);
-
-				System.out.println(
-						"[debug] poly1:" + polygon1Key + " -> " + poly1);
-
-				System.out.println("\tAdd " + e.v1 + " "
-						+  e.v2);
-
-				System.out.println(
-						"[debug] poly2:" + polygon2Key + " -> " + poly2);
-				System.out.println("\tAdd " +  e.v1 + " "
-						+  e.v2);
 			}
 
 			// Add polygons
@@ -1136,8 +1126,6 @@ class VoronoiKOrder {
 						.forEach(v -> poly.addPoint(v.getX(), v.getY()));
 
 				this.polygonKeyToPolygon.put(e.getKey(), poly);
-
-				System.out.println("[debug] final ploygon:" + " - " + poly);
 			}
 		}
 	}

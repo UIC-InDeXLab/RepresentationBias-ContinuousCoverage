@@ -20,6 +20,19 @@ import smile.math.distance.EuclideanDistance;
 
 public class Utils {
 	final static long seed = 10;
+	
+
+
+	/**
+	 * Randomly generate a double number with max value
+	 * @param max
+	 * @return
+	 */
+	public static double randDouble(double max) {
+	    Random rand = new Random(seed);
+	    return rand.nextDouble() * max;
+	}
+	
 
 	/**
 	 * Randomly generate n d-dimensional points

@@ -2,7 +2,9 @@ package vldb;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -24,6 +26,7 @@ import smile.io.CSV;
 import umichdb.coverage2.BasicCoverageChecker;
 import umichdb.coverage2.MithraCoverageChecker;
 import umichdb.coverage2.Utils;
+import umichdb.coverage2.MithraCoverageCheckerUI.Uiconfig;
 
 public class EfficiencyTest {
 	DataFrame df;
@@ -69,6 +72,7 @@ public class EfficiencyTest {
 			mcc = new MithraCoverageChecker(df, k, rho);
 
 		double constructionEndTime = System.currentTimeMillis();
+			
 		return (constructionEndTime - constructionBeginTime) / 1000.0
 				/ repeatTimes;
 	}
@@ -141,6 +145,9 @@ public class EfficiencyTest {
 
 		List<String> constructionResult = new ArrayList<String>();
 		constructionResult.add("Dataset,K,Rho,Time");
+		
+		List<String> queryTimeResult = new ArrayList<String>();
+		queryTimeResult.add("Dataset,K,Rho,NumQueries,Dimensions,Time");
 
 		for (int k : kValues) {
 			for (double rho : rhoValues) {
@@ -151,25 +158,27 @@ public class EfficiencyTest {
 						datasetFileName, k, rho, constructionTime));
 
 				// Query test
-				List<String> queryTimeResult = new ArrayList<String>();
-				queryTimeResult.add("Dataset,K,Rho,NumQueries,Dimensions,Time");
+
 
 				for (int numQueries : numQueriesTested) {
 					System.out.println(String
-							.format("Efficiency test: file=%s, k=%d, rho=%.3f, numQueries=%d, dim=%d", datasetFileName, k, rho, numQueries, dimensions));
+							.format("[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, numQueries=%d, dim=%d", datasetFileName, k, rho, numQueries, dimensions));
 					double queryTime = irisTest.mithraQueryTime(numQueries,
 							dimensions);
 					queryTimeResult.add(String.format("%s,%d,%.3f,%d,%d,%.3f",
 							datasetFileName, k, rho, numQueries, dimensions,
 							queryTime));
 				}
-				for (String row : queryTimeResult)
-					System.out.println(row);
+
 			}
 		}
 
 		// Print final output
 		for (String row : constructionResult)
+			System.out.println(row);
+		
+		
+		for (String row : queryTimeResult)
 			System.out.println(row);
 
 	}

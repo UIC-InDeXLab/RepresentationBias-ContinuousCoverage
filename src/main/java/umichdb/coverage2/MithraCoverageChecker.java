@@ -68,6 +68,12 @@ public class MithraCoverageChecker implements CoverageChecker {
 		// Rescaling
 		scaler = Scaler.fit(rawDataset);
 		this.dataset = scaler.transform(rawDataset);
+		
+		// Add some random noise to make sure all data points are unique in the dataset so that the voronoi library won't fail
+		Noiser noiser = Noiser.fit(this.dataset);
+		this.dataset = noiser.transform(this.dataset);
+		
+		
 		this.k = k; // k points
 		this.rho = rho; // max distance to qualify as adjacent
 		this.d = rawDataset.ncols();
@@ -75,22 +81,9 @@ public class MithraCoverageChecker implements CoverageChecker {
 		if (this.d != 2) {
 			System.err.println("WARNING: the dimensionality of dataset is not 2. Better try approximate coverage checker");
 		}
-
-		
-		
-		System.out.println("[debug] dataset" + this.dataset);
 		
 		// Create cache in the form of a Voronoi diagram
 		findVoronoi();
-		
-//		for (int i = 0; i < this.dataset.size(); i++) {
-//			Tuple p = this.dataset.get(i);
-//			System.out.println(String.format("Data: %.3f, %.3f", p.getDouble(0), p.getDouble(1)));
-//		}
-//		System.out.println();
-//		for (VoronoiPolygon p : coverageVoronoiDiagram.getPolygons()) {
-//			System.out.println("Poly:" + p + " " + p.npoints);
-//		}
 		
 		this.coverageDecisionTree = null;
 	}
@@ -308,28 +301,25 @@ public class MithraCoverageChecker implements CoverageChecker {
 		}
 		
 		double minDist = Double.MAX_VALUE;
-		Tuple closestP = null;
+		Point2D closestP = null;
+
 		
-		for (int i = 0; i < this.dataset.size(); i++) {
-			Tuple t = this.dataset.get(i);
+		for (Point2D p : this.coverageVoronoiDiagram.sites) {
 			
-			double dist = (t.getDouble(0) - x) * (t.getDouble(0) - x)  + (t.getDouble(1) - y)  * (t.getDouble(1) - y);
+			double dist = (p.getX() - x) * (p.getX() - x)  + (p.getY() - y)  * (p.getY() - y);
 			
 			if (dist < minDist) {
 				minDist = dist;
-				closestP = t;
+				closestP = p;
 			}
 		}
 		
-		System.out.println("closest p:" + closestP);
+		System.err.println("closest p:" + closestP);
+		
+//		for (VEdge e : this.coverageVoronoiDiagram.edges) {
+//			System.err.println(e);
+//		}
 
-	
-		
-		
-//		System.err.println(String.format(
-//				"getContainingVoronoiPolyKey ERROR: (%.2f,%.2f) is not found in any voronoi polygon", x,
-//				y));
-//		System.err.print("Number of polygons: " + coverageVoronoiDiagram.getPolygons().size());
 		System.exit(1);
 		return null;
 	}
