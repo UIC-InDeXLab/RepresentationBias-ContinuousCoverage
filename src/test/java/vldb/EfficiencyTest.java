@@ -1,5 +1,10 @@
 package vldb;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -33,6 +38,8 @@ public class EfficiencyTest {
 	MithraCoverageChecker mcc;
 	BasicCoverageChecker bcc;
 
+	final static String resultDir = "result";
+
 	/**
 	 * 
 	 * @param dataFileName
@@ -41,21 +48,7 @@ public class EfficiencyTest {
 	public EfficiencyTest(String dataFileName, String schemaFileName,
 			String[] selectedAttrs) {
 		this.df = Utils.loadDataSetFromCSV(dataFileName, schemaFileName);
-		
-//		this.df = this.df.slice(0, 30);		// For debugging
-
 		this.df = this.df.select(selectedAttrs);
-
-	}
-
-	/**
-	 * Evaluate MithraCoverage construction time (in seconds)
-	 * @param k
-	 * @param rho
-	 * @return
-	 */
-	public double mithraConstructionTime(int k, double rho) {
-		return mithraConstructionTime(k, rho, 1);
 	}
 
 	/**
@@ -72,7 +65,7 @@ public class EfficiencyTest {
 			mcc = new MithraCoverageChecker(df, k, rho);
 
 		double constructionEndTime = System.currentTimeMillis();
-			
+
 		return (constructionEndTime - constructionBeginTime) / 1000.0
 				/ repeatTimes;
 	}
@@ -145,7 +138,7 @@ public class EfficiencyTest {
 
 		List<String> constructionResult = new ArrayList<String>();
 		constructionResult.add("Dataset,K,Rho,Time");
-		
+
 		List<String> queryTimeResult = new ArrayList<String>();
 		queryTimeResult.add("Dataset,K,Rho,NumQueries,Dimensions,Time");
 
@@ -158,28 +151,80 @@ public class EfficiencyTest {
 						datasetFileName, k, rho, constructionTime));
 
 				// Query test
-
-
 				for (int numQueries : numQueriesTested) {
-					System.out.println(String
-							.format("[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, numQueries=%d, dim=%d", datasetFileName, k, rho, numQueries, dimensions));
+					System.out.println(String.format(
+							"[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, numQueries=%d, dim=%d",
+							datasetFileName, k, rho, numQueries, dimensions));
 					double queryTime = irisTest.mithraQueryTime(numQueries,
 							dimensions);
 					queryTimeResult.add(String.format("%s,%d,%.3f,%d,%d,%.3f",
 							datasetFileName, k, rho, numQueries, dimensions,
 							queryTime));
 				}
-
 			}
 		}
+		
+		// Output result
+		if (cmd.checkArgument(Cli.ARG_OUTPUT)) {
+			System.out.println("[RESULT] SAVE_TO_FILE="
+					+ cmd.checkArgument(Cli.ARG_OUTPUT));
 
-		// Print final output
-		for (String row : constructionResult)
-			System.out.println(row);
-		
-		
-		for (String row : queryTimeResult)
-			System.out.println(row);
+			LocalDateTime myDateObj = LocalDateTime.now();
+			DateTimeFormatter myFormatObj = DateTimeFormatter
+					.ofPattern("MM_dd_HH_mm_ss");
+
+			String constructionResultFileName = String.format(
+					"%s/%s_%s.construction.csv", resultDir,
+					datasetFileName.replaceAll("[^0-9a-zA-Z]", "_"),
+					myDateObj.format(myFormatObj));
+			
+			try {
+				FileWriter myWriter = new FileWriter(
+						constructionResultFileName);
+				for (String row : constructionResult) {
+					myWriter.write(row + "\n");
+				}
+				myWriter.close();
+				System.out.println(String.format(
+						"[RESULT] Successfully wrote to the file %s.",
+						constructionResultFileName));
+			} catch (IOException e) {
+				System.out.println(String.format(
+						"[ERROR] Fail to wrote to the file %s.",
+						constructionResultFileName));
+				e.printStackTrace();
+			}
+
+			String queryResultFileName = String.format("%s/%s_%s.query.csv",
+					resultDir, datasetFileName.replaceAll("[^0-9a-zA-Z]", "_"),
+					myDateObj.format(myFormatObj));
+			try {
+				FileWriter myWriter = new FileWriter(queryResultFileName);
+				for (String row : queryTimeResult) {
+					myWriter.write(row + "\n");
+				}
+				myWriter.close();
+				System.out.println(String.format(
+						"[RESULT] Successfully wrote to the file %s.",
+						queryResultFileName));
+			} catch (IOException e) {
+				System.out.println(String.format(
+						"[ERROR] Fail to wrote to the file %s.",
+						queryResultFileName));
+				e.printStackTrace();
+			}
+
+		} else {
+			System.out.println("[RESULT] SAVE_TO_FILE="
+					+ cmd.checkArgument(Cli.ARG_OUTPUT));
+			// Print final output
+			for (String row : constructionResult)
+				System.out.println(row);
+
+			for (String row : queryTimeResult)
+				System.out.println(row);
+
+		}
 
 	}
 }

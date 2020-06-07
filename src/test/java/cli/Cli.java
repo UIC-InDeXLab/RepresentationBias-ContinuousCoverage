@@ -25,6 +25,7 @@ public class Cli {
 	public final static String ARG_NUM_QUERIES = "n";
 	public final static String ARG_REPEAT = "p";
 	public final static String ARG_ATTRS = "a";
+	public final static String ARG_OUTPUT = "o";
 	
 
 	private final static String MSG_HELP = "show help";
@@ -35,6 +36,7 @@ public class Cli {
 	private final static String MSG_ATTRS = "selected attribute values";
 	private final static String MSG_NUM_QUERIES = "numQueries values";
 	private final static String MSG_NUM_REPEATS = "number of repeats";
+	private final static String MSG_OUTPUT = "if store test result in a file";
 
 	public Cli(String[] args) {
 		this.args = args;
@@ -43,6 +45,8 @@ public class Cli {
 		options = new Options();
 
 		options.addOption(ARG_HELP, false, MSG_HELP);
+		options.addOption(ARG_OUTPUT, false, MSG_OUTPUT);
+		
 		options.addOption(ARG_INPUT, true, MSG_INPUT); // input file arg
 		options.addOption(ARG_SCHEMA, true, MSG_SCHEMA); // input file arg
 		

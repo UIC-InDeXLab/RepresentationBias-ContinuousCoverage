@@ -79,7 +79,7 @@ public class MithraCoverageChecker implements CoverageChecker {
 		this.d = rawDataset.ncols();
 		
 		if (this.d != 2) {
-			System.err.println("WARNING: the dimensionality of dataset is not 2. Better try approximate coverage checker");
+			System.err.println("[WARNING] The dimensionality of dataset is not 2. Better try approximate coverage checker");
 		}
 		
 		// Create cache in the form of a Voronoi diagram
