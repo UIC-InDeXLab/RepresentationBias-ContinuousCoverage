@@ -55,8 +55,15 @@ public class AccuracyTest {
 		for (int i = 0; i < queryPoints.size(); i++) {
 			Tuple p = queryPoints.get(i);
 			if (approximateMCC.ifCovered(p.toArray(), false) == bcc
-					.ifCovered(p.toArray()))
+					.ifCovered(p.toArray())) {
 				truePositiveCount++;
+//				System.out.println("[debug]" + approximateMCC.ifCovered(p.toArray(), false)  + " " + bcc
+//						.ifCovered(p.toArray()));
+			}
+			else{
+//				System.out.println("[debug]" + approximateMCC.ifCovered(p.toArray(), false)  + " " + bcc
+//					.ifCovered(p.toArray()) + " " + p);
+			}
 		}
 
 		return truePositiveCount / numQueries;

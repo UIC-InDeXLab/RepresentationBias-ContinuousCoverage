@@ -30,10 +30,53 @@ In Eclipse or other IDE, all packages should be automatically installed once [im
 
 Explain how to run the automated tests for this system
 
-### From Console
+### Command line arguments
+
+Command line arguments to use when running test scripts
+
+| Option | Descriptions                    | Has arguments | Allow multiple values |
+|--------|--------------------------------|---------------|-----------------------|
+| -a     | selected attribute values      | Yes           | Yes                   |
+| -e     | epsilon values                 | Yes           | Yes                   |
+| -h     | show help                      | No            |                       |
+| -i     | input dataset data file name   | Yes           | No                    |
+| -k     | k values                       | Yes           | Yes                   |
+| -n     | numQueries values              | Yes           | Yes                   |
+| -o     | if store test result in a file | No            |                       |
+| -p     | number of repeats              | Yes           | No                    |
+| -phi   | phi values                     | Yes           | Yes                   |
+| -r     | rho values                     | Yes           | Yes                   |
+| -s     | input dataset schema file name | Yes           | No                    |
+
+
+### Run tests from console
+
+#### Accuracy Test
+
+Format
 
 ```bash
-mvn -e exec:java@demo
+mvn -e exec:java@accuracy -Dexec.args="{command-line-arguments}"
+```
+
+Example
+
+```bash
+mvn -e exec:java@accuracy -Dexec.args="-i data/iris.data -s data/iris.schema -a sepalLength sepalWidth petalLength -k 3 -r 0.05 0.1 0.15 -n  2000 -p 1 -e 0.1 -phi 0.1"
+```
+
+#### Efficiency Test
+
+Format
+
+```bash
+mvn -e exec:java@accuracy -Dexec.args="{command-line-arguments}"
+```
+
+Example
+
+```bash
+mvn -e exec:java@efficiency -Dexec.args="-i data/iris.data -s data/iris.schema -a sepalLength sepalWidth -k 2 -r 0.05 0.1 0.15 -n  2000 -p 1"
 ```
 
 ### From Eclipse

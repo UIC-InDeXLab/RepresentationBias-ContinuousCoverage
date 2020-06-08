@@ -65,6 +65,7 @@
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
 				<version>1.6.0</version>
+
 				<executions>
 					<execution>
 						<id>demo</id>
@@ -72,10 +73,39 @@
 							<goal>exec</goal>
 						</goals>
 						<configuration>
-							<mainClass>umichdb.coverage2.TestCoverageChecker</mainClass>
+							<mainClass>random.TestCoverageChecker</mainClass>
 							<classpathScope>test</classpathScope>
 							<cleanupDaemonThreads>false</cleanupDaemonThreads>
 							<argLine>-Xmx8G</argLine>
+							<argLine>-Xms4G</argLine>
+						</configuration>
+					</execution>
+					
+					
+					<execution>
+						<id>efficiency</id>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<mainClass>vldb.EfficiencyTest</mainClass>
+							<classpathScope>test</classpathScope>
+							<cleanupDaemonThreads>false</cleanupDaemonThreads>
+							<argLine>-Xmx16G</argLine>
+							<argLine>-Xms4G</argLine>
+						</configuration>
+					</execution>
+					
+					<execution>
+						<id>accuracy</id>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<mainClass>vldb.AccuracyTest</mainClass>
+							<classpathScope>test</classpathScope>
+							<cleanupDaemonThreads>false</cleanupDaemonThreads>
+							<argLine>-Xmx16G</argLine>
 							<argLine>-Xms4G</argLine>
 						</configuration>
 					</execution>

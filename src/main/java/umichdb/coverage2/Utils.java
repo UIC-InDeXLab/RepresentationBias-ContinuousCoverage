@@ -22,7 +22,7 @@ import smile.io.CSV;
 import smile.math.distance.EuclideanDistance;
 
 public class Utils {
-	final static long seed = 10;
+//	final static long seed = 10;
 	
 
 
@@ -32,7 +32,7 @@ public class Utils {
 	 * @return
 	 */
 	public static double randDouble(double max) {
-	    Random rand = new Random(seed);
+	    Random rand = new Random();
 	    return rand.nextDouble() * max;
 	}
 	
@@ -46,8 +46,6 @@ public class Utils {
 	 */
 	public static DataFrame genRandDataset(int n, int d) {
 		Random rand = new Random();
-
-		rand.setSeed(seed);
 
 		double[][] data = new double[n][d];
 
@@ -74,9 +72,7 @@ public class Utils {
 			return df;
 		}
 		else {
-			Random rand = new Random();
-			rand.setSeed(seed);
-			
+			Random rand = new Random();			
 			List<Integer> indexes = IntStream.range(0, df.size())
 		            .boxed().collect(Collectors.toList());
 			
