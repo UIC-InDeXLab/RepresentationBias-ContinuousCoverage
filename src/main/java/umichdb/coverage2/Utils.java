@@ -1,10 +1,13 @@
 package umichdb.coverage2;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.apache.commons.csv.CSVFormat;
 
@@ -57,6 +60,29 @@ public class Utils {
 		DataFrame randPoints = DataFrame.of(data);
 
 		return randPoints;
+	}
+	
+	/**
+	 * create a sample of the dataset
+	 * 
+	 * @param df
+	 * @param sampleSize
+	 * @return
+	 */
+	public static DataFrame sampleDataset(DataFrame df, int sampleSize) {
+		if (sampleSize >= df.size()) {
+			return df;
+		}
+		else {
+			Random rand = new Random();
+			rand.setSeed(seed);
+			
+			List<Integer> indexes = IntStream.range(0, df.size())
+		            .boxed().collect(Collectors.toList());
+			
+			Collections.shuffle(indexes);			
+			return df.of(indexes.subList(0, sampleSize).stream().mapToInt(i -> i).toArray());
+		}
 	}
 
 	static final String SCHEMA_NAME_COL = "Name";

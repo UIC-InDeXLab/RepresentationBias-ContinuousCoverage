@@ -52,39 +52,39 @@ public class MithraCoverageChecker implements CoverageChecker {
 	int k;
 	double rho;
 
-	static final int TAU = 10;
+	static final int TAU = 2;
 
 	/**
 	 * Find exact coverage
 	 * 
 	 * @param rawDataset
 	 * @param k
-	 *            (minimum number of data points within rho distance to qualify
-	 *            as covered)
+	 *            = threshold value
 	 * @param rho
-	 *            (distance)
+	 *            = vicinity value
 	 */
 	public MithraCoverageChecker(DataFrame rawDataset, int k, double rho) {
 		// Rescaling
 		scaler = Scaler.fit(rawDataset);
 		this.dataset = scaler.transform(rawDataset);
-		
-		// Add some random noise to make sure all data points are unique in the dataset so that the voronoi library won't fail
+
+		// Add some random noise to make sure all data points are unique in the
+		// dataset so that the voronoi library won't fail
 		Noiser noiser = Noiser.fit(this.dataset);
 		this.dataset = noiser.transform(this.dataset);
-		
-		
+
 		this.k = k; // k points
 		this.rho = rho; // max distance to qualify as adjacent
 		this.d = rawDataset.ncols();
-		
+
 		if (this.d != 2) {
-			System.err.println("[WARNING] The dimensionality of dataset is not 2. Better try approximate coverage checker");
+			System.err.println(
+					"[WARNING] The dimensionality of dataset is not 2. Better try approximate coverage checker");
 		}
-		
+
 		// Create cache in the form of a Voronoi diagram
 		findVoronoi();
-		
+
 		this.coverageDecisionTree = null;
 	}
 
@@ -93,8 +93,13 @@ public class MithraCoverageChecker implements CoverageChecker {
 	 * 
 	 * @param dataset
 	 * @param k
+	 *            = threshold value
 	 * @param rho
-	 * @param numSamples
+	 *            = vicinity value
+	 * @param epsilon
+	 *            = error bound
+	 * @param phi
+	 *            = (1-phi) is the probability of the error bound
 	 */
 	public MithraCoverageChecker(DataFrame dataset, int k, double rho,
 			double epsilon, double phi) {
@@ -109,9 +114,11 @@ public class MithraCoverageChecker implements CoverageChecker {
 		// Create "s" many samples as observations to build a "decision tree"
 		// later
 		int numSamples = getNumSamples(epsilon, phi);
-		DataFrame observations = Utils.genRandDataset(numSamples, this.d);
-		boolean[] labels = new boolean[observations.nrows()];
+		DataFrame observations = Utils.sampleDataset(this.dataset, numSamples);
 
+		
+		// Create training data on the sampled dataset
+		boolean[] labels = new boolean[observations.nrows()];
 		int counter = 0;
 		int numCovers = 0;
 		int numUncovers = 0;
@@ -150,23 +157,11 @@ public class MithraCoverageChecker implements CoverageChecker {
 			coverageDecisionTree = DecisionTree.fit(f, labeledObservations,
 					SplitRule.GINI, 10, 100, 2);
 
-			// System.out.println((DecisionNode)coverageDecisionTree.ro);
-
-			List<String> lines = new ArrayList<>();
-			Node n = coverageDecisionTree.root();
-
-			// // Preparing to draw in 2d space
-			// coverageDecisionTree.root().toString(coverageDecisionTree.schema(),
-			// labeledObservations.schema().field(labelName), null, 0,
-			// BigInteger.ONE, lines);
-
-			coverageDecisionTree.dot();
-
 			System.out.println(
-					"STATUS: Decision tree to report coverage is built.");
+					"[INFO] Decision tree to report coverage is built.");
 		} else {
 			System.out.println(
-					"WARNING: The dataset is all covered/uncovered in the current setting.");
+					"[WARNING] The dataset is all covered/uncovered in the current setting.");
 			this.coverageDecisionTree = null;
 		}
 
@@ -294,31 +289,33 @@ public class MithraCoverageChecker implements CoverageChecker {
 			}
 		}
 		try {
-			throw new Exception(String.format("Exception: (%.3f,%.3f) is not found in any voronoi polygon", x, y));
+			throw new Exception(String.format(
+					"Exception: (%.3f,%.3f) is not found in any voronoi polygon",
+					x, y));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		double minDist = Double.MAX_VALUE;
 		Point2D closestP = null;
 
-		
 		for (Point2D p : this.coverageVoronoiDiagram.sites) {
-			
-			double dist = (p.getX() - x) * (p.getX() - x)  + (p.getY() - y)  * (p.getY() - y);
-			
+
+			double dist = (p.getX() - x) * (p.getX() - x)
+					+ (p.getY() - y) * (p.getY() - y);
+
 			if (dist < minDist) {
 				minDist = dist;
 				closestP = p;
 			}
 		}
-		
+
 		System.err.println("closest p:" + closestP);
-		
-//		for (VEdge e : this.coverageVoronoiDiagram.edges) {
-//			System.err.println(e);
-//		}
+
+		// for (VEdge e : this.coverageVoronoiDiagram.edges) {
+		// System.err.println(e);
+		// }
 
 		System.exit(1);
 		return null;

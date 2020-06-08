@@ -1,5 +1,6 @@
 package cli;
 
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,7 +27,8 @@ public class Cli {
 	public final static String ARG_REPEAT = "p";
 	public final static String ARG_ATTRS = "a";
 	public final static String ARG_OUTPUT = "o";
-	
+	public final static String ARG_EPSILON = "e";
+	public final static String ARG_PHI = "phi";
 
 	private final static String MSG_HELP = "show help";
 	private final static String MSG_INPUT = "input dataset data file name";
@@ -37,26 +39,30 @@ public class Cli {
 	private final static String MSG_NUM_QUERIES = "numQueries values";
 	private final static String MSG_NUM_REPEATS = "number of repeats";
 	private final static String MSG_OUTPUT = "if store test result in a file";
+	private final static String MSG_EPSILON = "epsilon values";
+	private final static String MSG_PHI = "phi values";
+
+	private final static String[] MANDATORY_OPTIONS = new String[]{ARG_INPUT,
+			ARG_SCHEMA, ARG_K, ARG_RHO, ARG_NUM_QUERIES, ARG_REPEAT};
 
 	public Cli(String[] args) {
 		this.args = args;
-		
+
 		// Define command line interface
 		options = new Options();
 
 		options.addOption(ARG_HELP, false, MSG_HELP);
 		options.addOption(ARG_OUTPUT, false, MSG_OUTPUT);
-		
+
 		options.addOption(ARG_INPUT, true, MSG_INPUT); // input file arg
 		options.addOption(ARG_SCHEMA, true, MSG_SCHEMA); // input file arg
-		
+
 		// k values arg
 		Option kOpt = new Option(ARG_K, MSG_K);
 		kOpt.setArgs(Option.UNLIMITED_VALUES);
 		kOpt.setValueSeparator(',');
 		options.addOption(kOpt);
 
-		
 		// rho values arg
 		Option rhoOpt = new Option(ARG_RHO, true, MSG_RHO);
 		rhoOpt.setArgs(Option.UNLIMITED_VALUES);
@@ -73,6 +79,16 @@ public class Cli {
 		Option repeatOpt = new Option(ARG_REPEAT, true, MSG_NUM_REPEATS);
 		options.addOption(repeatOpt);
 
+		// epsilon values arg
+		Option epsilonOpt = new Option(ARG_EPSILON, true, MSG_EPSILON);
+		epsilonOpt.setArgs(Option.UNLIMITED_VALUES);
+		options.addOption(epsilonOpt);
+
+		// epsilon values arg
+		Option phiOpt = new Option(ARG_PHI, true, MSG_PHI);
+		phiOpt.setArgs(Option.UNLIMITED_VALUES);
+		options.addOption(phiOpt);
+
 		parse();
 	}
 
@@ -85,6 +101,23 @@ public class Cli {
 			cmd = parser.parse(options, args);
 			if (cmd.hasOption(ARG_HELP))
 				help();
+			for (String manOp : MANDATORY_OPTIONS) {
+				if (!cmd.hasOption(manOp)) {
+					System.err.println("[ERROR] Missing option = " + manOp);
+					help();
+				}
+			}
+			
+			if (cmd.hasOption(ARG_EPSILON) && !cmd.hasOption(ARG_PHI)) {
+				System.err.println("[ERROR] Missing option = " + ARG_PHI);
+				help();
+			}
+			
+			if (!cmd.hasOption(ARG_EPSILON) && cmd.hasOption(ARG_PHI)) {
+				System.err.println("[ERROR] Missing option = " + ARG_EPSILON);
+				help();
+			}
+
 		} catch (ParseException e) {
 			log.log(Level.SEVERE, "Failed to parse comand line properties", e);
 			help();
@@ -102,7 +135,9 @@ public class Cli {
 		if (cmd.hasOption(argName))
 			return cmd.getOptionValue(argName);
 		try {
-			throw new Exception(String.format("getArgValue ERROR: Argument [%s] not found. Exit.", argName));
+			throw new Exception(String.format(
+					"getArgValue ERROR: Argument [%s] not found. Exit.",
+					argName));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -111,18 +146,21 @@ public class Cli {
 		System.exit(0);
 		return null;
 	}
-	
+
 	/**
 	 * Get argument values (more than 1)
+	 * 
 	 * @param argName
 	 * @return
 	 */
 	public String[] getArgValues(String argName) {
 		if (cmd.hasOption(argName))
 			return cmd.getOptionValues(argName);
-		
+
 		try {
-			throw new Exception(String.format("getArgValues ERROR: Argument [%s] not found. Exit.", argName));
+			throw new Exception(String.format(
+					"getArgValues ERROR: Argument [%s] not found. Exit.",
+					argName));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -138,7 +176,7 @@ public class Cli {
 	 * @param argName
 	 * @return
 	 */
-	public boolean checkArgument(String argName) {
+	public boolean hasOption(String argName) {
 		return cmd.hasOption(argName);
 	}
 
@@ -151,5 +189,15 @@ public class Cli {
 
 		formater.printHelp("Main", options);
 		System.exit(0);
+	}
+
+	@Override
+	public String toString() {
+		String output = "";
+		for (Option o : cmd.getOptions()) {
+			output += o.getOpt() + "=" + Arrays.toString(o.getValues()) + "\n";
+		}
+
+		return output;
 	}
 }

@@ -52,7 +52,7 @@ public class EfficiencyTest {
 	}
 
 	/**
-	 * Evaluate average MithraCoverage construction time (in seconds)
+	 * Construct MithraCoverage checker and measure time (in seconds)
 	 * 
 	 * @param k
 	 * @param rho
@@ -63,6 +63,30 @@ public class EfficiencyTest {
 
 		for (int i = 0; i < repeatTimes; i++)
 			mcc = new MithraCoverageChecker(df, k, rho);
+
+		double constructionEndTime = System.currentTimeMillis();
+
+		return (constructionEndTime - constructionBeginTime) / 1000.0
+				/ repeatTimes;
+	}
+
+	/**
+	 * Construct approximate MithraCoverage checker and measure time (in
+	 * seconds)
+	 * 
+	 * @param k
+	 * @param rho
+	 * @param epsilon
+	 * @param phi
+	 * @param repeatTimes
+	 * @return
+	 */
+	public double mithraConstructionTime(int k, double rho, double epsilon,
+			double phi, int repeatTimes) {
+		double constructionBeginTime = System.currentTimeMillis();
+
+		for (int i = 0; i < repeatTimes; i++)
+			mcc = new MithraCoverageChecker(df, k, rho, epsilon, phi);
 
 		double constructionEndTime = System.currentTimeMillis();
 
@@ -137,47 +161,116 @@ public class EfficiencyTest {
 				schemaFileName, selectedAttrs);
 
 		List<String> constructionResult = new ArrayList<String>();
-		constructionResult.add("Dataset,K,Rho,Time");
+		if (!cmd.hasOption(Cli.ARG_EPSILON)) {
+			constructionResult.add("Dataset,K,Rho,Time");
+		} else {
+			constructionResult.add("Dataset,K,Rho,Epsilon,Phi,Time");
+		}
 
 		List<String> queryTimeResult = new ArrayList<String>();
-		queryTimeResult.add("Dataset,K,Rho,NumQueries,Dimensions,Time");
+		if (!cmd.hasOption(Cli.ARG_EPSILON)) {
+
+			queryTimeResult.add("Dataset,K,Rho,NumQueries,Dimensions,Time");
+		} else {
+			queryTimeResult.add(
+					"Dataset,K,Rho,Rho,Epsilon,NumQueries,Dimensions,Time");
+
+		}
 
 		for (int k : kValues) {
 			for (double rho : rhoValues) {
-				// Construction test
-				double constructionTime = irisTest.mithraConstructionTime(k,
-						rho, repeat);
-				constructionResult.add(String.format("%s,%d,%.3f,%.3f",
-						datasetFileName, k, rho, constructionTime));
+				if (!cmd.hasOption(Cli.ARG_EPSILON)) {
+					// Construction test
+					double constructionTime = irisTest.mithraConstructionTime(k,
+							rho, repeat);
+					constructionResult.add(String.format("%s,%d,%.3f,%.3f",
+							datasetFileName, k, rho, constructionTime));
 
-				// Query test
-				for (int numQueries : numQueriesTested) {
-					System.out.println(String.format(
-							"[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, numQueries=%d, dim=%d",
-							datasetFileName, k, rho, numQueries, dimensions));
-					double queryTime = irisTest.mithraQueryTime(numQueries,
-							dimensions);
-					queryTimeResult.add(String.format("%s,%d,%.3f,%d,%d,%.3f",
-							datasetFileName, k, rho, numQueries, dimensions,
-							queryTime));
+					// Query test
+					for (int numQueries : numQueriesTested) {
+						System.out.println(String.format(
+								"[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, numQueries=%d, dim=%d",
+								datasetFileName, k, rho, numQueries,
+								dimensions));
+						double queryTime = irisTest.mithraQueryTime(numQueries,
+								dimensions);
+						queryTimeResult.add(String.format(
+								"%s,%d,%.3f,%d,%d,%.3f", datasetFileName, k,
+								rho, numQueries, dimensions, queryTime));
+					}
+				} else {
+					double[] epsilonValues = Arrays
+							.stream(cmd.getArgValues(Cli.ARG_EPSILON))
+							.mapToDouble(Double::parseDouble).toArray();
+					double[] phiValues = Arrays
+							.stream(cmd.getArgValues(Cli.ARG_PHI))
+							.mapToDouble(Double::parseDouble).toArray();
+
+					// Construction test
+					for (double epsilon : epsilonValues) {
+						for (double phi : phiValues) {
+							double constructionTime = irisTest
+									.mithraConstructionTime(k, rho, epsilon,
+											phi, repeat);
+							constructionResult.add(
+									String.format("%s,%d,%.3f,%.3f,%.3f,%.3f",
+											datasetFileName, k, rho, epsilon,
+											phi, constructionTime));
+
+							// Query test
+							for (int numQueries : numQueriesTested) {
+								System.out.println(String.format(
+										"[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, epsilon=%.3f, phi=%.3f, numQueries=%d, dim=%d",
+										datasetFileName, k, rho, epsilon, phi,
+										numQueries, dimensions));
+								double queryTime = irisTest.mithraQueryTime(
+										numQueries, dimensions);
+								queryTimeResult.add(String.format(
+										"%s,%d,%.3f,%.3f,%.3f,%d,%d,%.3f",
+										datasetFileName, k, rho, epsilon, phi,
+										numQueries, dimensions, queryTime));
+							}
+						}
+					}
 				}
 			}
 		}
-		
+
 		// Output result
-		if (cmd.checkArgument(Cli.ARG_OUTPUT)) {
-			System.out.println("[RESULT] SAVE_TO_FILE="
-					+ cmd.checkArgument(Cli.ARG_OUTPUT));
+		if (cmd.hasOption(Cli.ARG_OUTPUT)) {
+			System.out.println(
+					"[RESULT] SAVE_TO_FILE=" + cmd.hasOption(Cli.ARG_OUTPUT));
 
-			LocalDateTime myDateObj = LocalDateTime.now();
-			DateTimeFormatter myFormatObj = DateTimeFormatter
+			LocalDateTime datetimeObj = LocalDateTime.now();
+			DateTimeFormatter formatObj = DateTimeFormatter
 					.ofPattern("MM_dd_HH_mm_ss");
+			String dataTimeStr = datetimeObj.format(formatObj);
 
+			// Output config
+			String cmdConfigFileName = String.format("%s/%s_%s.config.txt",
+					resultDir, datasetFileName.replaceAll("[^0-9a-zA-Z]", "_"),
+					dataTimeStr);
+
+			try {
+				FileWriter myWriter = new FileWriter(cmdConfigFileName);
+				myWriter.write(cmd.toString());
+				myWriter.close();
+				System.out.println(String.format(
+						"[RESULT] Successfully wrote config to the file %s.",
+						cmdConfigFileName));
+			} catch (IOException e) {
+				System.out.println(String.format(
+						"[ERROR] Fail to write config to the file %s.",
+						cmdConfigFileName));
+				e.printStackTrace();
+			}
+
+			// Output construction time result
 			String constructionResultFileName = String.format(
 					"%s/%s_%s.construction.csv", resultDir,
 					datasetFileName.replaceAll("[^0-9a-zA-Z]", "_"),
-					myDateObj.format(myFormatObj));
-			
+					dataTimeStr);
+
 			try {
 				FileWriter myWriter = new FileWriter(
 						constructionResultFileName);
@@ -186,18 +279,19 @@ public class EfficiencyTest {
 				}
 				myWriter.close();
 				System.out.println(String.format(
-						"[RESULT] Successfully wrote to the file %s.",
+						"[RESULT] Successfully wrote construction time to the file %s.",
 						constructionResultFileName));
 			} catch (IOException e) {
-				System.out.println(String.format(
-						"[ERROR] Fail to wrote to the file %s.",
-						constructionResultFileName));
+				System.out.println(
+						String.format("[ERROR] Fail to write to the file %s.",
+								constructionResultFileName));
 				e.printStackTrace();
 			}
 
+			// Output query time result
 			String queryResultFileName = String.format("%s/%s_%s.query.csv",
 					resultDir, datasetFileName.replaceAll("[^0-9a-zA-Z]", "_"),
-					myDateObj.format(myFormatObj));
+					dataTimeStr);
 			try {
 				FileWriter myWriter = new FileWriter(queryResultFileName);
 				for (String row : queryTimeResult) {
@@ -205,18 +299,18 @@ public class EfficiencyTest {
 				}
 				myWriter.close();
 				System.out.println(String.format(
-						"[RESULT] Successfully wrote to the file %s.",
+						"[RESULT] Successfully wrote query time to the file %s.",
 						queryResultFileName));
 			} catch (IOException e) {
-				System.out.println(String.format(
-						"[ERROR] Fail to wrote to the file %s.",
-						queryResultFileName));
+				System.out.println(
+						String.format("[ERROR] Fail to write to the file %s.",
+								queryResultFileName));
 				e.printStackTrace();
 			}
 
 		} else {
-			System.out.println("[RESULT] SAVE_TO_FILE="
-					+ cmd.checkArgument(Cli.ARG_OUTPUT));
+			System.out.println(
+					"[RESULT] SAVE_TO_FILE=" + cmd.hasOption(Cli.ARG_OUTPUT));
 			// Print final output
 			for (String row : constructionResult)
 				System.out.println(row);
