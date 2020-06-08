@@ -1,10 +1,16 @@
 package vldb;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.csv.CSVFormat;
 
+import cli.Cli;
 import smile.data.DataFrame;
 import smile.data.Tuple;
 import smile.data.measure.NominalScale;
@@ -22,33 +28,28 @@ public class AccuracyTest {
 	MithraCoverageChecker approximateMCC;
 	BasicCoverageChecker bcc;
 
+	final static String resultDir = "result";
+
 	/**
 	 * 
 	 * @param fileName
 	 * @param schema
 	 */
-	public AccuracyTest(String fileName, StructType schema) {
-		CSV csv = new CSV(CSVFormat.DEFAULT);
-		csv.schema(schema);
-
-		try {
-			df = csv.read(fileName);
-		} catch (Exception ex) {
-			System.err.println("Failed to load file: " + ex);
-			ex.printStackTrace();
-			System.exit(-1);
-		}
+	public AccuracyTest(String dataFileName, String schemaFileName,
+			String[] selectedAttrs) {
+		this.df = Utils.loadDataSetFromCSV(dataFileName, schemaFileName);
+		this.df = this.df.select(selectedAttrs);
 	}
 
 	/**
 	 * Check accuracy ((tp+tn)/total) of approximate coverage checker.
 	 */
-	public double testAccuracy(int k, double rho, int numQueries, int d,
-			double epsilon, double delta) {
+	public double testAccuracy(int k, double rho, double epsilon, double phi,
+			int numQueries) {
 		bcc = new BasicCoverageChecker(df, k, rho);
-		approximateMCC = new MithraCoverageChecker(df, k, rho, epsilon, delta);
-
-		DataFrame queryPoints = Utils.genRandDataset(numQueries, d);
+		approximateMCC = new MithraCoverageChecker(df, k, rho, epsilon, phi);
+		
+		DataFrame queryPoints = Utils.genRandDataset(numQueries, df.schema().length());
 
 		double truePositiveCount = 0;
 		for (int i = 0; i < queryPoints.size(); i++) {
@@ -63,43 +64,134 @@ public class AccuracyTest {
 
 	public static void main(String[] args) {
 
-		// Test IRIS
-		String fileName = "data/iris.data";
-		String[] selectedAttrs = new String[]{"Iris Setosa", "Iris Versicolour",
-				"Iris Virginica"};
+		// Parse command line arguments and set specs
+		Cli cmd = new Cli(args);
 
-		StructType schema = DataTypes.struct(
-				new StructField("sepalLength", DataTypes.DoubleType),
-				new StructField("sepalWidth", DataTypes.DoubleType),
-				new StructField("petalLength", DataTypes.DoubleType),
-				new StructField("petalWidth", DataTypes.DoubleType),
-				new StructField("class", DataTypes.ByteType,
-						new NominalScale(selectedAttrs)));
-		AccuracyTest irisTest = new AccuracyTest(fileName, schema);
-		List<String> accuracyTestResult = new ArrayList<String>();
-		accuracyTestResult.add("Dataset,K,Rho,NumQueries,Dimensions,Epsilon,Delta,Accuracy");
+		if (!cmd.hasOption(Cli.ARG_EPSILON)) {
+			System.out.println("[ERROR] no epsilon provided.");
+			System.exit(0);
+		}
 
-		int[] kValues = new int[]{2};
-		double[] rhoValues = new double[]{0.05, 0.1, 0.15};
-		int[] numQueriesTested = new int[]{50, 100, 150, 200};
-		double[] epsilonValues = new double[]{0.01, 0.05, 0.1};
-		double[] deltaValues = new double[]{0.01, 0.05, 0.1};
-		
+		if (!cmd.hasOption(Cli.ARG_PHI)) {
+			System.out.println("[ERROR] no phi provided.");
+			System.exit(0);
+		}
+
+		String datasetFileName = cmd.getArgValue(Cli.ARG_INPUT);
+		String schemaFileName = cmd.getArgValue(Cli.ARG_SCHEMA);
+		int[] kValues = Arrays.stream(cmd.getArgValues(Cli.ARG_K))
+				.mapToInt(Integer::parseInt).toArray();
+		double[] rhoValues = Arrays.stream(cmd.getArgValues(Cli.ARG_RHO))
+				.mapToDouble(Double::parseDouble).toArray();
+		int[] numQueriesTested = Arrays
+				.stream(cmd.getArgValues(Cli.ARG_NUM_QUERIES))
+				.mapToInt(Integer::parseInt).toArray();
+		String[] selectedAttrs = cmd.getArgValues(Cli.ARG_ATTRS);
+		int repeat = Integer.parseInt(cmd.getArgValue(Cli.ARG_REPEAT));
+		int dimensions = selectedAttrs.length;
+
+		// Start test
+		AccuracyTest irisTest = new AccuracyTest(datasetFileName,
+				schemaFileName, selectedAttrs);
+
+		List<String> accuracyResult = new ArrayList<String>();
+		accuracyResult.add(
+				"Dataset,K,Rho,Rho,Epsilon,NumQueries,Dimensions,Accuracy");
+
 		for (int k : kValues) {
 			for (double rho : rhoValues) {
-				for (int numQueries : numQueriesTested) {
-					for (double epsilon : epsilonValues) {
-						for (double delta : deltaValues) {
-							double accuracy = irisTest.testAccuracy(k, rho,
-									numQueries, selectedAttrs.length, epsilon, delta);
-							accuracyTestResult.add(String.format(
-									"%s,%d,%.3f,%d,%d,%.3f,%.3f,%.3f", fileName, k, rho,
-									numQueries, selectedAttrs.length, epsilon, delta, accuracy));
+				double[] epsilonValues = Arrays
+						.stream(cmd.getArgValues(Cli.ARG_EPSILON))
+						.mapToDouble(Double::parseDouble).toArray();
+				double[] phiValues = Arrays
+						.stream(cmd.getArgValues(Cli.ARG_PHI))
+						.mapToDouble(Double::parseDouble).toArray();
+
+				// Construction test
+				for (double epsilon : epsilonValues) {
+					for (double phi : phiValues) {
+						// Query test
+						for (int numQueries : numQueriesTested) {
+							System.out.println(String.format(
+									"[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, epsilon=%.3f, phi=%.3f, numQueries=%d, dim=%d",
+									datasetFileName, k, rho, epsilon, phi,
+									numQueries, dimensions));
+							List<Double> accuracies = new ArrayList<Double>();
+							for (int i = 0; i < repeat; i++) {
+								accuracies.add(irisTest.testAccuracy(k, rho,
+										epsilon, phi, numQueries));
+							}
+							accuracyResult.add(String
+									.format("%s,%d,%.3f,%.3f,%.3f,%d,%d,%.3f",
+											datasetFileName, k, rho, epsilon,
+											phi, numQueries, dimensions,
+											accuracies.stream()
+													.mapToDouble(d -> d)
+													.average().orElse(0.0)));
 						}
 					}
 				}
 			}
 		}
 
+		// Output result
+		if (cmd.hasOption(Cli.ARG_OUTPUT)) {
+			System.out.println(
+					"[RESULT] SAVE_TO_FILE=" + cmd.hasOption(Cli.ARG_OUTPUT));
+
+			LocalDateTime datetimeObj = LocalDateTime.now();
+			DateTimeFormatter formatObj = DateTimeFormatter
+					.ofPattern("MM_dd_HH_mm_ss");
+			String dataTimeStr = datetimeObj.format(formatObj);
+
+			// Output config
+			String cmdConfigFileName = String.format(
+					"%s/accuracy_%s_%s.config.txt", resultDir,
+					datasetFileName.replaceAll("[^0-9a-zA-Z]", "_"),
+					dataTimeStr);
+
+			try {
+				FileWriter myWriter = new FileWriter(cmdConfigFileName);
+				myWriter.write(cmd.toString());
+				myWriter.close();
+				System.out.println(String.format(
+						"[RESULT] Successfully wrote config to the file %s.",
+						cmdConfigFileName));
+			} catch (IOException e) {
+				System.out.println(String.format(
+						"[ERROR] Fail to write config to the file %s.",
+						cmdConfigFileName));
+				e.printStackTrace();
+			}
+
+			// Output accuracy result
+			String accuracyResultFileName = String.format(
+					"%s/accuracy_%s_%s.query.csv", resultDir,
+					datasetFileName.replaceAll("[^0-9a-zA-Z]", "_"),
+					dataTimeStr);
+			try {
+				FileWriter myWriter = new FileWriter(accuracyResultFileName);
+				for (String row : accuracyResult) {
+					myWriter.write(row + "\n");
+				}
+				myWriter.close();
+				System.out.println(String.format(
+						"[RESULT] Successfully wrote accuracies to the file %s.",
+						accuracyResultFileName));
+			} catch (IOException e) {
+				System.out.println(
+						String.format("[ERROR] Fail to write to the file %s.",
+								accuracyResultFileName));
+				e.printStackTrace();
+			}
+
+		} else {
+			System.out.println(
+					"[RESULT] SAVE_TO_FILE=" + cmd.hasOption(Cli.ARG_OUTPUT));
+			// Print final output
+			for (String row : accuracyResult)
+				System.out.println(row);
+
+		}
 	}
 }

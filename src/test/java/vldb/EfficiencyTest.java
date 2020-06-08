@@ -247,7 +247,7 @@ public class EfficiencyTest {
 			String dataTimeStr = datetimeObj.format(formatObj);
 
 			// Output config
-			String cmdConfigFileName = String.format("%s/%s_%s.config.txt",
+			String cmdConfigFileName = String.format("%s/efficiency_%s_%s.config.txt",
 					resultDir, datasetFileName.replaceAll("[^0-9a-zA-Z]", "_"),
 					dataTimeStr);
 
@@ -267,7 +267,7 @@ public class EfficiencyTest {
 
 			// Output construction time result
 			String constructionResultFileName = String.format(
-					"%s/%s_%s.construction.csv", resultDir,
+					"%s/efficiency_%s_%s.construction.csv", resultDir,
 					datasetFileName.replaceAll("[^0-9a-zA-Z]", "_"),
 					dataTimeStr);
 
@@ -289,7 +289,7 @@ public class EfficiencyTest {
 			}
 
 			// Output query time result
-			String queryResultFileName = String.format("%s/%s_%s.query.csv",
+			String queryResultFileName = String.format("%s/efficiency_%s_%s.query.csv",
 					resultDir, datasetFileName.replaceAll("[^0-9a-zA-Z]", "_"),
 					dataTimeStr);
 			try {
