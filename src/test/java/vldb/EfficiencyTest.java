@@ -97,12 +97,12 @@ public class EfficiencyTest {
 	/**
 	 * Evaluate MithraCoverage query time (in seconds)
 	 * 
-	 * @param numQueries
+	 * @param numQueryPts
 	 * @param d
 	 * @return
 	 */
-	public double mithraQueryTime(int numQueries, int d) {
-		DataFrame queryPoints = Utils.genRandDataset(numQueries, d);
+	public double mithraQueryTime(int numQueryPts, int d) {
+		DataFrame queryPoints = Utils.genRandDataset(numQueryPts, d);
 
 		double constructionBeginTime = System.currentTimeMillis();
 
@@ -120,13 +120,13 @@ public class EfficiencyTest {
 	 * 
 	 * @param k
 	 * @param rho
-	 * @param numQueries
+	 * @param numQueryPts
 	 * @param d
 	 * @return
 	 */
-	public double baselineQueryTime(int k, double rho, int numQueries, int d) {
+	public double baselineQueryTime(int k, double rho, int numQueryPts, int d) {
 		bcc = new BasicCoverageChecker(df, k, rho);
-		DataFrame queryPoints = Utils.genRandDataset(numQueries, d);
+		DataFrame queryPoints = Utils.genRandDataset(numQueryPts, d);
 
 		double constructionBeginTime = System.currentTimeMillis();
 
@@ -149,7 +149,7 @@ public class EfficiencyTest {
 				.mapToInt(Integer::parseInt).toArray();
 		double[] rhoValues = Arrays.stream(cmd.getArgValues(Cli.ARG_RHO))
 				.mapToDouble(Double::parseDouble).toArray();
-		int[] numQueriesTested = Arrays
+		int[] numQueryPtsVals = Arrays
 				.stream(cmd.getArgValues(Cli.ARG_NUM_QUERIES))
 				.mapToInt(Integer::parseInt).toArray();
 		String[] selectedAttrs = cmd.getArgValues(Cli.ARG_ATTRS);
@@ -187,16 +187,16 @@ public class EfficiencyTest {
 							datasetFileName, k, rho, constructionTime));
 
 					// Query test
-					for (int numQueries : numQueriesTested) {
+					for (int numQueryPts : numQueryPtsVals) {
 						System.out.println(String.format(
 								"[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, numQueries=%d, dim=%d",
-								datasetFileName, k, rho, numQueries,
+								datasetFileName, k, rho, numQueryPts,
 								dimensions));
-						double queryTime = irisTest.mithraQueryTime(numQueries,
+						double queryTime = irisTest.mithraQueryTime(numQueryPts,
 								dimensions);
 						queryTimeResult.add(String.format(
 								"%s,%d,%.3f,%d,%d,%.3f", datasetFileName, k,
-								rho, numQueries, dimensions, queryTime));
+								rho, numQueryPts, dimensions, queryTime));
 					}
 				} else {
 					double[] epsilonValues = Arrays
@@ -218,7 +218,7 @@ public class EfficiencyTest {
 											phi, constructionTime));
 
 							// Query test
-							for (int numQueries : numQueriesTested) {
+							for (int numQueries : numQueryPtsVals) {
 								System.out.println(String.format(
 										"[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, epsilon=%.3f, phi=%.3f, numQueries=%d, dim=%d",
 										datasetFileName, k, rho, epsilon, phi,

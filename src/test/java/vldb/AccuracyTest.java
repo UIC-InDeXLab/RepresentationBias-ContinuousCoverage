@@ -45,11 +45,11 @@ public class AccuracyTest {
 	 * Check accuracy ((tp+tn)/total) of approximate coverage checker.
 	 */
 	public double testAccuracy(int k, double rho, double epsilon, double phi,
-			int numQueries) {
+			int numQueryPts) {
 		bcc = new BasicCoverageChecker(df, k, rho);
 		approximateMCC = new MithraCoverageChecker(df, k, rho, epsilon, phi);
 		
-		DataFrame queryPoints = Utils.genRandDataset(numQueries, df.schema().length());
+		DataFrame queryPoints = Utils.genRandDataset(numQueryPts, df.schema().length());
 
 		double truePositiveCount = 0;
 		for (int i = 0; i < queryPoints.size(); i++) {
@@ -66,7 +66,7 @@ public class AccuracyTest {
 			}
 		}
 
-		return truePositiveCount / numQueries;
+		return truePositiveCount / numQueryPts;
 	}
 
 	public static void main(String[] args) {
@@ -90,7 +90,7 @@ public class AccuracyTest {
 				.mapToInt(Integer::parseInt).toArray();
 		double[] rhoValues = Arrays.stream(cmd.getArgValues(Cli.ARG_RHO))
 				.mapToDouble(Double::parseDouble).toArray();
-		int[] numQueriesTested = Arrays
+		int[] numQueryPtsVals = Arrays
 				.stream(cmd.getArgValues(Cli.ARG_NUM_QUERIES))
 				.mapToInt(Integer::parseInt).toArray();
 		String[] selectedAttrs = cmd.getArgValues(Cli.ARG_ATTRS);
@@ -118,20 +118,20 @@ public class AccuracyTest {
 				for (double epsilon : epsilonValues) {
 					for (double phi : phiValues) {
 						// Query test
-						for (int numQueries : numQueriesTested) {
+						for (int numQueryPts : numQueryPtsVals) {
 							System.out.println(String.format(
 									"[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, epsilon=%.3f, phi=%.3f, numQueries=%d, dim=%d",
 									datasetFileName, k, rho, epsilon, phi,
-									numQueries, dimensions));
+									numQueryPts, dimensions));
 							List<Double> accuracies = new ArrayList<Double>();
 							for (int i = 0; i < repeat; i++) {
 								accuracies.add(irisTest.testAccuracy(k, rho,
-										epsilon, phi, numQueries));
+										epsilon, phi, numQueryPts));
 							}
 							accuracyResult.add(String
 									.format("%s,%d,%.3f,%.3f,%.3f,%d,%d,%.3f",
 											datasetFileName, k, rho, epsilon,
-											phi, numQueries, dimensions,
+											phi, numQueryPts, dimensions,
 											accuracies.stream()
 													.mapToDouble(d -> d)
 													.average().orElse(0.0)));

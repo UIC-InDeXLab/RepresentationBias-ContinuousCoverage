@@ -36,7 +36,7 @@ public class Cli {
 	private final static String MSG_K = "k values";
 	private final static String MSG_RHO = "rho values";
 	private final static String MSG_ATTRS = "selected attribute values";
-	private final static String MSG_NUM_QUERIES = "numQueries values";
+	private final static String MSG_NUM_QUERIES = "number of query points";
 	private final static String MSG_NUM_REPEATS = "number of repeats";
 	private final static String MSG_OUTPUT = "if store test result in a file";
 	private final static String MSG_EPSILON = "epsilon values";
@@ -68,12 +68,13 @@ public class Cli {
 		rhoOpt.setArgs(Option.UNLIMITED_VALUES);
 		options.addOption(rhoOpt);
 		// numQueries values arg
-		Option numOpt = new Option(ARG_NUM_QUERIES, true, MSG_NUM_QUERIES);
-		numOpt.setArgs(Option.UNLIMITED_VALUES);
-		options.addOption(numOpt);
+		Option numQueryPtsOpt = new Option(ARG_NUM_QUERIES, true, MSG_NUM_QUERIES);
+		numQueryPtsOpt.setArgs(Option.UNLIMITED_VALUES);
+		options.addOption(numQueryPtsOpt);
 		// attribute values
 		Option attrOpt = new Option(ARG_ATTRS, true, MSG_ATTRS);
 		attrOpt.setArgs(Option.UNLIMITED_VALUES);
+		
 		options.addOption(attrOpt);
 		// repeat values arg
 		Option repeatOpt = new Option(ARG_REPEAT, true, MSG_NUM_REPEATS);
