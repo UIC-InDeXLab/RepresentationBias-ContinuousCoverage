@@ -121,9 +121,9 @@ public class AccuracyTest {
 						// Query test
 						for (int numQueryPts : numQueryPtsVals) {
 							System.out.println(String.format(
-									"[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, epsilon=%.3f, phi=%.3f, numQueryPts=%d, dim=%d",
+									"[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, epsilon=%.3f, phi=%.3f, numQueryPts=%d, dim=%d, repeat=%d",
 									datasetFileName, k, rho, epsilon, phi,
-									numQueryPts, dimensions));
+									numQueryPts, dimensions, repeat));
 							List<Double> accuracies = new ArrayList<Double>();
 							for (int i = 0; i < repeat; i++) {
 								accuracies.add(irisTest.testAccuracy(k, rho,

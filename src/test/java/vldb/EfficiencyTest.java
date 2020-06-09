@@ -192,11 +192,17 @@ public class EfficiencyTest {
 								"[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, numQueryPts=%d, dim=%d",
 								datasetFileName, k, rho, numQueryPts,
 								dimensions));
-						double queryTime = irisTest.mithraQueryTime(numQueryPts,
-								dimensions);
+
+						List<Double> queryTimes = new ArrayList<Double>();
+						for (int i = 0; i < repeat; i++) {
+							queryTimes.add(irisTest.mithraQueryTime(numQueryPts,
+									dimensions));
+						}
 						queryTimeResult.add(String.format(
 								"%s,%d,%.3f,%d,%d,%.3f", datasetFileName, k,
-								rho, numQueryPts, dimensions, queryTime));
+								rho, numQueryPts, dimensions,
+								queryTimes.stream().mapToDouble(d -> d)
+										.average().orElse(0.0)));
 					}
 				} else {
 					double[] epsilonValues = Arrays
@@ -223,12 +229,17 @@ public class EfficiencyTest {
 										"[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, epsilon=%.3f, phi=%.3f, numQueryPts=%d, dim=%d",
 										datasetFileName, k, rho, epsilon, phi,
 										numQueryPts, dimensions));
-								double queryTime = irisTest.mithraQueryTime(
-										numQueryPts, dimensions);
+								List<Double> queryTimes = new ArrayList<Double>();
+								for (int i = 0; i < repeat; i++) {
+									queryTimes.add(irisTest.mithraQueryTime(
+											numQueryPts, dimensions));
+								}
 								queryTimeResult.add(String.format(
 										"%s,%d,%.3f,%.3f,%.3f,%d,%d,%.3f",
 										datasetFileName, k, rho, epsilon, phi,
-										numQueryPts, dimensions, queryTime));
+										numQueryPts, dimensions,
+										queryTimes.stream().mapToDouble(d -> d)
+												.average().orElse(0.0)));
 							}
 						}
 					}
@@ -247,8 +258,9 @@ public class EfficiencyTest {
 			String dataTimeStr = datetimeObj.format(formatObj);
 
 			// Output config
-			String cmdConfigFileName = String.format("%s/efficiency_%s_%s.config.txt",
-					resultDir, datasetFileName.replaceAll("[^0-9a-zA-Z]", "_"),
+			String cmdConfigFileName = String.format(
+					"%s/efficiency_%s_%s.config.txt", resultDir,
+					datasetFileName.replaceAll("[^0-9a-zA-Z]", "_"),
 					dataTimeStr);
 
 			try {
@@ -289,8 +301,9 @@ public class EfficiencyTest {
 			}
 
 			// Output query time result
-			String queryResultFileName = String.format("%s/efficiency_%s_%s.query.csv",
-					resultDir, datasetFileName.replaceAll("[^0-9a-zA-Z]", "_"),
+			String queryResultFileName = String.format(
+					"%s/efficiency_%s_%s.query.csv", resultDir,
+					datasetFileName.replaceAll("[^0-9a-zA-Z]", "_"),
 					dataTimeStr);
 			try {
 				FileWriter myWriter = new FileWriter(queryResultFileName);
