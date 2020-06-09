@@ -52,7 +52,7 @@ public class MithraCoverageChecker implements CoverageChecker {
 	int k;
 	double rho;
 
-	static final int TAU = 2;
+	static final int TAU = 50;
 
 	/**
 	 * Find exact coverage
