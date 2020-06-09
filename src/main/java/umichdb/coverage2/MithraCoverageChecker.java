@@ -114,18 +114,18 @@ public class MithraCoverageChecker implements CoverageChecker {
 		// Create "s" many samples as observations to build a "decision tree"
 		// later
 		int numSamples = getNumSamples(epsilon, phi);
-		DataFrame observations = Utils.genRandDataset(numSamples, this.d);
+		DataFrame sampleDataset = Utils.genRandDataset(numSamples, this.d);
 
 		// Create training data on the sampled dataset
-		boolean[] labels = new boolean[observations.nrows()];
+		boolean[] labels = new boolean[sampleDataset.nrows()];
 		int counter = 0;
 		int numCovers = 0;
 		int numUncovers = 0;
 
-		for (int i = 0; i < observations.size(); i++) {
+		for (int i = 0; i < sampleDataset.size(); i++) {
 			int neighborCount = 0;
 			for (int j = 0; j < this.dataset.size(); j++) {
-				if (Utils.getEuclideanDistance(observations.get(i),
+				if (Utils.getEuclideanDistance(sampleDataset.get(i),
 						this.dataset.get(j)) <= this.rho) {
 					neighborCount++;
 					if (neighborCount >= k) {
@@ -146,14 +146,14 @@ public class MithraCoverageChecker implements CoverageChecker {
 		if (numCovers != 0 && numUncovers != 0) {
 
 			String labelName = "ifCovered";
-			srcDataSchema = observations.schema();
+			srcDataSchema = sampleDataset.schema();
 
-			DataFrame labeledObservations = observations
+			DataFrame labeledSampleDataset = sampleDataset
 					.merge(BooleanVector.of(labelName, labels));
 			Formula f = Formula.lhs(labelName);
 
 			// Start building decision tree (default setting of decision tree learning)
-			coverageDecisionTree = DecisionTree.fit(f, labeledObservations, SplitRule.GINI , 100, 1000, 1);
+			coverageDecisionTree = DecisionTree.fit(f, labeledSampleDataset, SplitRule.GINI , 100, 1000, 1);
 //			
 //			
 //			int wrong = 0;
