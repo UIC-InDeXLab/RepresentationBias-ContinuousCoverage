@@ -59,27 +59,7 @@ public class Utils {
 
 		return randPoints;
 	}
-	
-	/**
-	 * create a sample of the dataset
-	 * 
-	 * @param df
-	 * @param sampleSize
-	 * @return
-	 */
-	public static DataFrame sampleDataset(DataFrame df, int sampleSize) {
-		if (sampleSize >= df.size()) {
-			return df;
-		}
-		else {
-			Random rand = new Random();			
-			List<Integer> indexes = IntStream.range(0, df.size())
-		            .boxed().collect(Collectors.toList());
-			
-			Collections.shuffle(indexes);			
-			return df.of(indexes.subList(0, sampleSize).stream().mapToInt(i -> i).toArray());
-		}
-	}
+
 
 	static final String SCHEMA_NAME_COL = "Name";
 	static final String SCHEMA_TYPE_COL = "Type";

@@ -52,7 +52,7 @@ public class MithraCoverageChecker implements CoverageChecker {
 	int k;
 	double rho;
 
-	static final int TAU = 50;
+	static final int TAU = 10;
 
 	/**
 	 * Find exact coverage
@@ -114,7 +114,7 @@ public class MithraCoverageChecker implements CoverageChecker {
 		// Create "s" many samples as observations to build a "decision tree"
 		// later
 		int numSamples = getNumSamples(epsilon, phi);
-		DataFrame observations = Utils.sampleDataset(this.dataset, numSamples);
+		DataFrame observations = Utils.genRandDataset(numSamples, this.d);
 
 		// Create training data on the sampled dataset
 		boolean[] labels = new boolean[observations.nrows()];
@@ -153,7 +153,17 @@ public class MithraCoverageChecker implements CoverageChecker {
 			Formula f = Formula.lhs(labelName);
 
 			// Start building decision tree (default setting of decision tree learning)
-			coverageDecisionTree = DecisionTree.fit(f, labeledObservations, SplitRule.GINI, 100, 1000, 1);
+			coverageDecisionTree = DecisionTree.fit(f, labeledObservations, SplitRule.GINI , 100, 1000, 1);
+//			
+//			
+//			int wrong = 0;
+//			for (int i = 0; i< observations.size(); i++) {
+//				if (labels[i] != (coverageDecisionTree.predict(observations.get(i)) == 1 ? true:false)) {
+//					wrong+=1;
+//				}
+//			}
+//			System.out.println("[debug] wrong = " + wrong +"/" +observations.size() );
+			
 		} else {
 			if (numCovers == 0) {
 				System.out.println(
