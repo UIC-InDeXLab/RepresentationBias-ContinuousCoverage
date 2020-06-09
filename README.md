@@ -62,7 +62,7 @@ mvn -e exec:java@accuracy -Dexec.args="{command-line-arguments}"
 Example
 
 ```bash
-mvn -e exec:java@accuracy -Dexec.args="-i data/iris.data -s data/iris.schema -a sepalLength sepalWidth petalLength -k 3 -r 0.05 0.1 0.15 -n 2000 -p 1 -e 0.1 0.2 -phi 0.1 0.2"
+mvn -e exec:java@accuracy -Dexec.args="-i data/iris.data -s data/iris.schema -a sepalLength sepalWidth petalLength -k 3 -r 0.05 0.1 0.15 -n 2000 -p 100 -e 0.1 0.2 -phi 0.1 0.2"
 ```
 
 #### Efficiency Test
@@ -76,7 +76,7 @@ mvn -e exec:java@accuracy -Dexec.args="{command-line-arguments}"
 Example
 
 ```bash
-mvn -e exec:java@efficiency -Dexec.args="-i data/iris.data -s data/iris.schema -a sepalLength sepalWidth -k 2 -r 0.05 0.1 0.15 -n 1000 2000 -p 5"
+mvn -e exec:java@efficiency -Dexec.args="-i data/iris.data -s data/iris.schema -a sepalLength sepalWidth -k 2 -r 0.05 0.1 0.15 -n 1000 2000 -p 100"
 ```
 
 ### From Eclipse

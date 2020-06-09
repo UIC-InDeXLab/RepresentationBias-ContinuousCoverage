@@ -170,10 +170,10 @@ public class EfficiencyTest {
 		List<String> queryTimeResult = new ArrayList<String>();
 		if (!cmd.hasOption(Cli.ARG_EPSILON)) {
 
-			queryTimeResult.add("Dataset,K,Rho,NumQueries,Dimensions,Time");
+			queryTimeResult.add("Dataset,K,Rho,numQueryPts,Dimensions,Time");
 		} else {
 			queryTimeResult.add(
-					"Dataset,K,Rho,Rho,Epsilon,NumQueries,Dimensions,Time");
+					"Dataset,K,Rho,Epsilon,Phi,numQueryPts,Dimensions,Time");
 
 		}
 
@@ -189,7 +189,7 @@ public class EfficiencyTest {
 					// Query test
 					for (int numQueryPts : numQueryPtsVals) {
 						System.out.println(String.format(
-								"[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, numQueries=%d, dim=%d",
+								"[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, numQueryPts=%d, dim=%d",
 								datasetFileName, k, rho, numQueryPts,
 								dimensions));
 						double queryTime = irisTest.mithraQueryTime(numQueryPts,
@@ -218,17 +218,17 @@ public class EfficiencyTest {
 											phi, constructionTime));
 
 							// Query test
-							for (int numQueries : numQueryPtsVals) {
+							for (int numQueryPts : numQueryPtsVals) {
 								System.out.println(String.format(
-										"[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, epsilon=%.3f, phi=%.3f, numQueries=%d, dim=%d",
+										"[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, epsilon=%.3f, phi=%.3f, numQueryPts=%d, dim=%d",
 										datasetFileName, k, rho, epsilon, phi,
-										numQueries, dimensions));
+										numQueryPts, dimensions));
 								double queryTime = irisTest.mithraQueryTime(
-										numQueries, dimensions);
+										numQueryPts, dimensions);
 								queryTimeResult.add(String.format(
 										"%s,%d,%.3f,%.3f,%.3f,%d,%d,%.3f",
 										datasetFileName, k, rho, epsilon, phi,
-										numQueries, dimensions, queryTime));
+										numQueryPts, dimensions, queryTime));
 							}
 						}
 					}

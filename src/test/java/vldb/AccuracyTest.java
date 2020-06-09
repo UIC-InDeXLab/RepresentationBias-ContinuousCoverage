@@ -52,6 +52,7 @@ public class AccuracyTest {
 		DataFrame queryPoints = Utils.genRandDataset(numQueryPts, df.schema().length());
 
 		double truePositiveCount = 0;
+		
 		for (int i = 0; i < queryPoints.size(); i++) {
 			Tuple p = queryPoints.get(i);
 			if (approximateMCC.ifCovered(p.toArray(), false) == bcc
@@ -61,7 +62,7 @@ public class AccuracyTest {
 //						.ifCovered(p.toArray()));
 			}
 			else{
-//				System.out.println("[debug]" + approximateMCC.ifCovered(p.toArray(), false)  + " " + bcc
+//				System.out.println("[debug] estimate=" + approximateMCC.ifCovered(p.toArray(), false)  + " actual=" + bcc
 //					.ifCovered(p.toArray()) + " " + p);
 			}
 		}
@@ -103,7 +104,7 @@ public class AccuracyTest {
 
 		List<String> accuracyResult = new ArrayList<String>();
 		accuracyResult.add(
-				"Dataset,K,Rho,Rho,Epsilon,NumQueries,Dimensions,Accuracy");
+				"Dataset,K,Rho,Epsilon,Phi,numQueryPts,Dimensions,Accuracy");
 
 		for (int k : kValues) {
 			for (double rho : rhoValues) {
@@ -120,7 +121,7 @@ public class AccuracyTest {
 						// Query test
 						for (int numQueryPts : numQueryPtsVals) {
 							System.out.println(String.format(
-									"[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, epsilon=%.3f, phi=%.3f, numQueries=%d, dim=%d",
+									"[INFO] Efficiency test: file=%s, k=%d, rho=%.3f, epsilon=%.3f, phi=%.3f, numQueryPts=%d, dim=%d",
 									datasetFileName, k, rho, epsilon, phi,
 									numQueryPts, dimensions));
 							List<Double> accuracies = new ArrayList<Double>();
