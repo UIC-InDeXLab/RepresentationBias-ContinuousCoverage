@@ -26,6 +26,10 @@ change history:
 
 import java.util.*;
 
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+
 //KCircle implements common properties of edges and vertices:
 //it may be checked if a point is relevant or critical, and 
 //it may be chosen if relevant points should be inside (near diagrams)
@@ -512,6 +516,8 @@ class VoronoiKOrder {
 
 	// todo is only used during the construction
 	TreeMap<VEdge, VEdge> todo;
+	
+	PointLocator locater;
 
 	// create an empty diagram:
 	public VoronoiKOrder() {
@@ -544,6 +550,28 @@ class VoronoiKOrder {
 		todo = new TreeMap<VEdge, VEdge>();
 
 		createGraph();
+		
+		this.findPolygons();
+		
+		
+		// Add point locator
+		Geometry[] polys = new Geometry[polygonKeyToPolygon.size()];
+		GeometryFactory geometryFactory = new GeometryFactory();
+		int i = 0;
+		for (Map.Entry<PointSet,VoronoiPolygon> e : polygonKeyToPolygon.entrySet()) {
+			VoronoiPolygon p = e.getValue();
+			
+			Coordinate[] coords = new Coordinate[p.npoints + 1];
+			
+			for (int j = 0; j < p.npoints; j++) {
+				coords[j] = new Coordinate(p.xpoints[j], p.ypoints[j]);
+			}
+			
+			coords[p.npoints] = new Coordinate(p.xpoints[0], p.ypoints[0]);
+			
+			polys[i++] = geometryFactory.createPolygon(coords);
+		}
+		this.locater = new PointLocator(polys);
 	}
 
 	// this function returns the center of the circle through the three points;
@@ -1164,6 +1192,68 @@ class VoronoiKOrder {
 	}
 	public PointSet getVertices() {
 		return vertices;
+	}
+
+	/**
+	 * Get the Voronoi polygon (keys) that contains point (x,y)
+	 * 
+	 * @param mithraCoverageChecker TODO
+	 * @param x
+	 * @param y
+	 * @return
+	 */
+	public PointSet locate(double x, double y) {
+//		for (VoronoiPolygon p : getPolygons()) {
+//			if (p.contains(x, y)) {
+//				return p.regionKey;
+//			}
+//		}
+		
+		Geometry poly = this.locater.lookup(x,y);
+		
+		if (poly != null) {
+			Coordinate[] polyPoints = poly.getCoordinates();
+			PointSet polyKey = new PointSet();
+			for (Coordinate c : polyPoints) {
+				polyKey.add(new Point2D(c.x, c.y));
+			}
+			System.out.println(String.format(
+					"Good: (%.3f,%.3f) found in voronoi polygon",
+					x, y));
+			return polyKey;
+		}		
+		
+		try {
+			throw new Exception(String.format(
+					"Exception: (%.3f,%.3f) is not found in any voronoi polygon",
+					x, y));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	
+		double minDist = Double.MAX_VALUE;
+		Point2D closestP = null;
+	
+		for (Point2D p : sites) {
+	
+			double dist = (p.getX() - x) * (p.getX() - x)
+					+ (p.getY() - y) * (p.getY() - y);
+	
+			if (dist < minDist) {
+				minDist = dist;
+				closestP = p;
+			}
+		}
+	
+		System.err.println("closest p:" + closestP);
+	
+		// for (VEdge e : this.coverageVoronoiDiagram.edges) {
+		// System.err.println(e);
+		// }
+	
+		System.exit(1);
+		return null;
 	}
 
 }

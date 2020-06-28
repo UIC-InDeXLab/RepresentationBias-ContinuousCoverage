@@ -16,7 +16,6 @@ public class TestPolygon {
 //		p.addPoint(0,0);
 
 		
-
 		System.out.println(p.npoints);
 		System.out.println(p.contains(0.6,0.5));
 	}

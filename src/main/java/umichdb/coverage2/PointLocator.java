@@ -34,6 +34,8 @@ public class PointLocator {
 	private HashMap<Set<Coordinate>, Geometry> triangleToPolygon;
 
 	public PointLocator(Geometry[] polygons) {
+
+
 		/* Initialize local variables */
 		DelaunayTriangulationBuilder triangualtionBuilder = new DelaunayTriangulationBuilder();
 		GeometryFactory fact = new GeometryFactory();
@@ -41,13 +43,12 @@ public class PointLocator {
 		HashMap<Coordinate, List<Coordinate>> coordinateToNeighbors = new HashMap<Coordinate, List<Coordinate>>();
 
 		triangleToPolygon = new HashMap<Set<Coordinate>, Geometry>();
-		
-		
+
 		/* Initialize private variables */
 		dag = new SimpleDirectedGraph<Geometry, DefaultEdge>(DefaultEdge.class);
 		graph = new SimpleGraph<Coordinate, DefaultEdge>(DefaultEdge.class);
 		cycleDetector = new CycleDetector<>(dag);
-		
+
 		/* Get all points */
 		Set<Coordinate> allPoints = new HashSet<Coordinate>();
 		for (Geometry poly : polygons) {
@@ -57,25 +58,24 @@ public class PointLocator {
 		}
 
 		/*
-		 * We get the triangulation of all polygons so that we can log which
-		 * triangles are from the original shape
+		 * We get the triangulation of all polygons so that we can log which triangles
+		 * are from the original shape
 		 */
 		for (Geometry poly : polygons) {
 			Set<Coordinate> polyPoints = new HashSet<Coordinate>();
 			for (Coordinate p : poly.getCoordinates()) {
 				polyPoints.add(p);
 			}
-			
+
 			triangualtionBuilder = new DelaunayTriangulationBuilder();
 			triangualtionBuilder.setSites(polyPoints);
-			
+
 			Geometry g = triangualtionBuilder.getTriangles(fact);
 			List<Geometry> triangles = new ArrayList<Geometry>();
 			for (int i = 0; i < g.getNumGeometries(); i++) {
 				triangles.add(g.getGeometryN(i));
 			}
-			
-	
+
 			/* add triangles to the valid list */
 			for (Geometry t : triangles) {
 				triangleToPolygon.put(new HashSet<>(Arrays.asList(t.getCoordinates())), poly);
@@ -85,9 +85,9 @@ public class PointLocator {
 		/* Add boundary points and triangulate between convex hull and shell */
 
 		/* Create outer bounding triangle to contain all the regions */
-		Coordinate p1 = new Coordinate(-1000000, -1000000);
-		Coordinate p2 = new Coordinate(0.0, 1000000);
-		Coordinate p3 = new Coordinate(1000000, -1000000);
+		Coordinate p1 = new Coordinate(-10000000, -10000000);
+		Coordinate p2 = new Coordinate(0.0, 10000000);
+		Coordinate p3 = new Coordinate(10000000, -10000000);
 
 		Coordinate[] boundaryPointsArray = new Coordinate[4];
 		boundaryPointsArray[0] = p1;
@@ -104,6 +104,9 @@ public class PointLocator {
 		finalTriangle = finalTrianglePoly.convexHull();
 		
 		
+		
+		
+		
 		triangualtionBuilder = new DelaunayTriangulationBuilder();
 		allPoints.addAll(boundaryPoints);
 		triangualtionBuilder.setSites(allPoints);
@@ -111,7 +114,8 @@ public class PointLocator {
 		Geometry g = triangualtionBuilder.getTriangles(fact);
 		List<Geometry> triangles = new ArrayList<Geometry>();
 		for (int i = 0; i < g.getNumGeometries(); i++) {
-			triangles.add(g.getGeometryN(i));
+			Geometry triangle = g.getGeometryN(i);
+			triangles.add(triangle);
 		}
 
 		/* Create graph that we later use to find independent sets */
@@ -271,7 +275,11 @@ public class PointLocator {
 			}
 
 		} while (graph.vertexSet().size() > 3);
-		
+
+	}
+
+	public Geometry lookup(double x, double y) {
+		return lookup(new Coordinate(x, y));
 	}
 
 	/**
@@ -290,15 +298,29 @@ public class PointLocator {
 			return null;
 		}
 
+//		System.out.println("\nTriangles");
+//		for (Set<Coordinate> triangle: triangleToPolygon.keySet()) {
+//			System.out.println(triangle);
+//		}
+//		System.out.println();
+//		System.out.println();
+
 		while (!dag.outgoingEdgesOf(curr).isEmpty()) {
 			boolean findTriangle = false;
 			for (DefaultEdge e : dag.outgoingEdgesOf(curr)) {
 				Geometry t = dag.getEdgeTarget(e);
-				if (t.contains(queryPoint) || t.intersects(queryPoint)) { // Add intersect just in case the point is on the edge of this triangle
+				if (t.contains(queryPoint) || t.intersects(queryPoint)) { // Add intersect just in case the point is on
+																			// the edge of this triangle
+//					System.out.println("containing triangle:" + t + " if_original:"
+//							+ triangleToPolygon.containsKey(new HashSet<>(Arrays.asList(t.getCoordinates()))));
+
 					curr = t;
 					findTriangle = true;
 					break;
 				}
+			}
+			if (!findTriangle) {
+				System.err.println("ERROR: no triangle found for " + queryPoint + " for " + curr);
 			}
 		}
 
@@ -310,23 +332,22 @@ public class PointLocator {
 
 	}
 
-
 	public static void main(String[] args) {
-		
+
 		GeometryFactory geometryFactory = new GeometryFactory();
-		
+
 		Coordinate p1 = new Coordinate(0.0, 0.0);
 		Coordinate p2 = new Coordinate(0.0, 1.0);
-		Coordinate p3 = new Coordinate(1.0, 1.0);
-		Coordinate p4 = new Coordinate(1.0, 0.0);
+		Coordinate p3 = new Coordinate(1.23611468329167362, 1.0);
+		Coordinate p4 = new Coordinate(1.23611468329167362, 0.0);
 		Coordinate p5 = new Coordinate(2.0, 1.0);
 		Coordinate p6 = new Coordinate(2.0, 0.0);
-		Geometry g1 = geometryFactory.createPolygon(new Coordinate[] {p1,p2,p3,p4,p1});
-		Geometry g2 = geometryFactory.createPolygon(new Coordinate[] {p4,p3,p5,p6, p4});
+		Geometry g1 = geometryFactory.createPolygon(new Coordinate[] { p1, p2, p3, p4, p1 });
+		Geometry g2 = geometryFactory.createPolygon(new Coordinate[] { p4, p3, p5, p6, p4 });
 
-		PointLocator t = new PointLocator(new Geometry[] {g1, g2});
+		PointLocator t = new PointLocator(new Geometry[] { g1, g2 });
 
 		System.out.println("found: " + t.lookup(new Coordinate(0.5, 0.5)));
-		
+
 	}
 }

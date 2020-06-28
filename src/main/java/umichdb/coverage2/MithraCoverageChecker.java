@@ -264,7 +264,7 @@ public class MithraCoverageChecker implements CoverageChecker {
 		}
 
 		if (this.coverageVoronoiDiagram != null) {
-			PointSet polygonKeys = getContainingVoronoiPolyKey(point[0],
+			PointSet polygonKeys = coverageVoronoiDiagram.locate(point[0],
 					point[1]);
 			if (polygonKeys == null)
 				return false;
@@ -284,52 +284,6 @@ public class MithraCoverageChecker implements CoverageChecker {
 							: true;
 		}
 		return false;
-	}
-
-	/**
-	 * Get the Voronoi polygon (keys) that contains point (x,y)
-	 * 
-	 * @param x
-	 * @param y
-	 * @return
-	 */
-	public PointSet getContainingVoronoiPolyKey(double x, double y) {
-		for (VoronoiPolygon p : coverageVoronoiDiagram.getPolygons()) {
-			if (p.contains(x, y)) {
-				return p.regionKey;
-			}
-		}
-		try {
-			throw new Exception(String.format(
-					"Exception: (%.3f,%.3f) is not found in any voronoi polygon",
-					x, y));
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		double minDist = Double.MAX_VALUE;
-		Point2D closestP = null;
-
-		for (Point2D p : this.coverageVoronoiDiagram.sites) {
-
-			double dist = (p.getX() - x) * (p.getX() - x)
-					+ (p.getY() - y) * (p.getY() - y);
-
-			if (dist < minDist) {
-				minDist = dist;
-				closestP = p;
-			}
-		}
-
-		System.err.println("closest p:" + closestP);
-
-		// for (VEdge e : this.coverageVoronoiDiagram.edges) {
-		// System.err.println(e);
-		// }
-
-		System.exit(1);
-		return null;
 	}
 
 	public static void main(String[] args) {
