@@ -1,6 +1,6 @@
 package umichdb.coverage2;
 
-import java.awt.Polygon;
+//import java.awt.Polygon;
 
 /*
 Higher Order Voronoi Diagrams - Demonstration Applet
@@ -29,6 +29,7 @@ import java.util.*;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Polygon;
 
 //KCircle implements common properties of edges and vertices:
 //it may be checked if a point is relevant or critical, and 
@@ -555,7 +556,7 @@ class VoronoiKOrder {
 		
 		
 		// Add point locator
-		Geometry[] polys = new Geometry[polygonKeyToPolygon.size()];
+		Polygon[] polys = new Polygon[polygonKeyToPolygon.size()];
 		GeometryFactory geometryFactory = new GeometryFactory();
 		int i = 0;
 		for (Map.Entry<PointSet,VoronoiPolygon> e : polygonKeyToPolygon.entrySet()) {
