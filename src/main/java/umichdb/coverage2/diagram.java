@@ -560,18 +560,18 @@ class VoronoiKOrder {
 		GeometryFactory geometryFactory = new GeometryFactory();
 		int i = 0;
 		for (Map.Entry<PointSet,VoronoiPolygon> e : polygonKeyToPolygon.entrySet()) {
-			VoronoiPolygon p = e.getValue();
-			
+			VoronoiPolygon p = e.getValue();			
 			Coordinate[] coords = new Coordinate[p.npoints + 1];
 			
 			for (int j = 0; j < p.npoints; j++) {
 				coords[j] = new Coordinate(p.xpoints[j], p.ypoints[j]);
 			}
 			
-			coords[p.npoints] = new Coordinate(p.xpoints[0], p.ypoints[0]);
+			coords[coords.length - 1] = new Coordinate(p.xpoints[0], p.ypoints[0]);
 			
 			polys[i++] = geometryFactory.createPolygon(coords);
 		}
+		
 		this.locater = new PointLocator(polys);
 	}
 
