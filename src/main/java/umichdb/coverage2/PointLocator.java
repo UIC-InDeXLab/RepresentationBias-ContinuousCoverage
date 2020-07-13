@@ -44,23 +44,7 @@ public class PointLocator {
 		/* Initialize local variables */
 		GeometryFactory fact = new GeometryFactory();
 		
-		
-//		Coordinate c1 = new Coordinate(0, 0);
-//		Coordinate c2 = new Coordinate(0, 1);
-//		Coordinate c3 = new Coordinate(1, 1);
-//		Coordinate c4 = new Coordinate(1, 0);
-//		
-//		Geometry bounds = fact.createPolygon(new Coordinate[] { c1, c2, c3, c4, c1 });
-//
-//		System.out.println("faces");
-//		for (Polygon p : faces) {
-//			if (bounds.contains(p))
-//				System.out.println(p);
-//		}
-//		System.out.println("\n\n\n");
-		
-		HashMap<Coordinate, List<Geometry>> coordinateToGeometry = new HashMap<Coordinate, List<Geometry>>();
-		HashMap<Coordinate, List<Coordinate>> coordinateToNeighbors = new HashMap<Coordinate, List<Coordinate>>();
+		HashMap<Coordinate, List<Geometry>> coordinateToRegions = new HashMap<Coordinate, List<Geometry>>();
 
 		triangleToPolygon = new HashMap<Set<Coordinate>, Geometry>();
 
@@ -71,14 +55,13 @@ public class PointLocator {
 		Coordinate p1 = new Coordinate(-1000000000, -1000000000);
 		Coordinate p2 = new Coordinate(0.0, 1000000000);
 		Coordinate p3 = new Coordinate(1000000000, -1000000000);
-
-		// Define boundary triangle
 		finalTriangle = fact.createPolygon(new Coordinate[] { p1, p2, p3, p1 }).convexHull();
+		
+		
 		
 		List<Geometry> triangles = new ArrayList<Geometry>();
 
 		// Step 1: Triangulate all faces
-		System.out.println("inner triangles:");
 		for (Polygon poly : faces) {
 			DelaunayTriangulationBuilder triangualtionBuilder = new DelaunayTriangulationBuilder();
 			triangualtionBuilder.setSites(poly);
@@ -86,7 +69,6 @@ public class PointLocator {
 			for (int i = 0; i < polyTriangles.getNumGeometries(); i++) {
 				Geometry triangle = polyTriangles.getGeometryN(i);
 				triangles.add(triangle);
-				System.out.println(triangle);
 				triangleToPolygon.put(new HashSet<>(Arrays.asList(triangle.getCoordinates())), poly);
 			}
 		}
@@ -105,11 +87,8 @@ public class PointLocator {
 		EarClipper ec = new EarClipper(spaceBetweenBoundaryAndConvexHullOfFaces);
 		Geometry outerTriangles = ec.getResult();
 		
-		System.out.println("outer triangles:" );
 		for (int i = 0; i < outerTriangles.getNumGeometries(); i++) {
 			Geometry triangle = outerTriangles.getGeometryN(i);
-			System.out.println(triangle);
-			triangles.add(triangle);
 		}
 
 		// Step 3: Create graph that we later use to find independent sets
@@ -127,24 +106,23 @@ public class PointLocator {
 			triangleHierarchy.addVertex(t);
 
 			for (int i = 0; i < 3; i++) {
-				List<Geometry> geoList;
-				List<Coordinate> neighborList;
+				List<Geometry> affectedRegions;
 
-				geoList = coordinateToGeometry.getOrDefault(coordinates[i], new ArrayList<Geometry>());
-				geoList.add(t);
-				coordinateToGeometry.put(coordinates[i], geoList);
+				affectedRegions = coordinateToRegions.getOrDefault(coordinates[i], new ArrayList<Geometry>());
+				affectedRegions.add(t);
+				coordinateToRegions.put(coordinates[i], affectedRegions);
 
 
-				neighborList = coordinateToNeighbors.getOrDefault(coordinates[i], new ArrayList<Coordinate>());
-				for (int j = 0; j < 4; j++) {
-					Coordinate c = coordinates[j];
-					if (c.equals(coordinates[i]))
-						continue;
-					if (!neighborList.contains(c))
-						neighborList.add(c);
-				}
-
-				coordinateToNeighbors.put(coordinates[i], neighborList);
+//				neighborList = coordinateToNeighbors.getOrDefault(coordinates[i], new ArrayList<Coordinate>());
+//				for (int j = 0; j < 4; j++) {
+//					Coordinate c = coordinates[j];
+//					if (c.equals(coordinates[i]))
+//						continue;
+//					if (!neighborList.contains(c))
+//						neighborList.add(c);
+//				}
+//
+//				coordinateToNeighbors.put(coordinates[i], neighborList);
 			}
 		}
 
@@ -187,24 +165,23 @@ public class PointLocator {
 				List<Coordinate> neighbors = new ArrayList<Coordinate>();
 				List<Geometry> oldTriangles = new ArrayList<Geometry>();
 				List<Geometry> newTriangles = new ArrayList<Geometry>();
-
-				neighbors = coordinateToNeighbors.get(p);
 				
 				System.out.println("remove=" + p);
-//				System.out.println("neighbors=" + neighbors);
 
 				
+				Polygon boundingPoly = findBoundingPolygon(p, coordinateToRegions.get(p));
+				
+				EarClipper ec2 = new EarClipper(boundingPoly);
+				Geometry g = ec2.getResult();
+				
 				// Triangulate the resulting hole
-				DelaunayTriangulationBuilder triangualtionBuilder = new DelaunayTriangulationBuilder();
-				triangualtionBuilder.setSites(neighbors);
-				Geometry g = triangualtionBuilder.getTriangles(fact);
 				for (int i = 0; i < g.getNumGeometries(); i++) {
 					newTriangles.add(g.getGeometryN(i));
 				}
 				
 				System.out.println("new trangles " + g);
 
-				oldTriangles = new ArrayList<Geometry>(coordinateToGeometry.get(p));
+				oldTriangles = new ArrayList<Geometry>(coordinateToRegions.get(p));
 				oldTriangles.removeAll(newTriangles);
 
 				if (newTriangles.size() == 1) {
@@ -233,29 +210,22 @@ public class PointLocator {
 				for (Geometry oldTriangle : oldTriangles) {
 					for (Coordinate c : oldTriangle.getCoordinates()) {
 //						System.out.println(c + " " + coordinateToGeometry.get(c));
-						if (coordinateToGeometry.containsKey(c))
-						coordinateToGeometry.get(c).remove(oldTriangle);
+						if (coordinateToRegions.containsKey(c))
+						coordinateToRegions.get(c).remove(oldTriangle);
 					}
 				}
 				
 				for (Geometry newTriangle : newTriangles) {
 					for (Coordinate c : newTriangle.getCoordinates()) {
-						List<Geometry> temp = coordinateToGeometry.getOrDefault(c, new ArrayList<Geometry>()); 
+						List<Geometry> temp = coordinateToRegions.getOrDefault(c, new ArrayList<Geometry>()); 
 						temp.add(newTriangle);
 					}
 				}
 				
 				
-				for (Coordinate neighborCoord : neighbors) {
-					// update coordinateToNeighbors
-					if (coordinateToNeighbors.containsKey(neighborCoord))
-						coordinateToNeighbors.get(neighborCoord).remove(p);
-				}
+				coordinateToRegions.remove(p);
 				
-				coordinateToGeometry.remove(p);
-				coordinateToNeighbors.remove(p);
-				
-				System.out.println("coordinateToNeighbors:" + coordinateToNeighbors + "\n");
+//				System.out.println("coordinateToNeighbors:" + coordinateToNeighbors + "\n");
 			}
 			
 		} while (graph.vertexSet().size() > 3);
@@ -269,8 +239,8 @@ public class PointLocator {
 	 * @param affectedRegions
 	 * @return
 	 */
-	public Geometry findBoundingPolygon(Coordinate p, Geometry[] affectedRegions) {
-		
+	public Polygon findBoundingPolygon(Coordinate p, List<Geometry> affectedRegions) {
+		return null;
 	}
 
 	public Geometry lookup(double x, double y) {
