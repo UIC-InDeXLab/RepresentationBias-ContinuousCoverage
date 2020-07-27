@@ -14,6 +14,7 @@ import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.LinearRing;
 import org.locationtech.jts.geom.MultiLineString;
 import org.locationtech.jts.*;
+//import org.locationtech.geowave.analytic.GeometryHullTool;
 import org.locationtech.jts.awt.PolygonShape;
 import org.jgrapht.graph.DirectedAcyclicGraph;
 import org.jgrapht.graph.SimpleDirectedGraph;
@@ -67,9 +68,9 @@ public class PointLocator {
 			triangualtionBuilder.setSites(poly);
 			Geometry polyTriangles = triangualtionBuilder.getTriangles(fact);
 			for (int i = 0; i < polyTriangles.getNumGeometries(); i++) {
-				Geometry triangle = polyTriangles.getGeometryN(i);
-				triangles.add(triangle);
-				triangleToPolygon.put(new HashSet<>(Arrays.asList(triangle.getCoordinates())), poly);
+				Geometry innerTriangle = polyTriangles.getGeometryN(i);
+				triangles.add(innerTriangle);
+				triangleToPolygon.put(new HashSet<>(Arrays.asList(innerTriangle.getCoordinates())), poly);
 			}
 		}
 		
@@ -88,7 +89,8 @@ public class PointLocator {
 		Geometry outerTriangles = ec.getResult();
 		
 		for (int i = 0; i < outerTriangles.getNumGeometries(); i++) {
-			Geometry triangle = outerTriangles.getGeometryN(i);
+			Geometry outerTriangle = outerTriangles.getGeometryN(i);
+			triangles.add(outerTriangle);
 		}
 
 		// Step 3: Create graph that we later use to find independent sets
@@ -111,18 +113,6 @@ public class PointLocator {
 				affectedRegions = coordinateToRegions.getOrDefault(coordinates[i], new ArrayList<Geometry>());
 				affectedRegions.add(t);
 				coordinateToRegions.put(coordinates[i], affectedRegions);
-
-
-//				neighborList = coordinateToNeighbors.getOrDefault(coordinates[i], new ArrayList<Coordinate>());
-//				for (int j = 0; j < 4; j++) {
-//					Coordinate c = coordinates[j];
-//					if (c.equals(coordinates[i]))
-//						continue;
-//					if (!neighborList.contains(c))
-//						neighborList.add(c);
-//				}
-//
-//				coordinateToNeighbors.put(coordinates[i], neighborList);
 			}
 		}
 
@@ -156,6 +146,8 @@ public class PointLocator {
 				if (add)
 					independentSet.add(u);
 			}
+			
+			System.out.println("independentSet:"+independentSet);
 
 			/*
 			 * Create new triangulation using the independentSet to formulate a new layer in the hierarchy
@@ -166,20 +158,23 @@ public class PointLocator {
 				List<Geometry> oldTriangles = new ArrayList<Geometry>();
 				List<Geometry> newTriangles = new ArrayList<Geometry>();
 				
-				System.out.println("remove=" + p);
+				
 
 				
-				Polygon boundingPoly = findBoundingPolygon(p, coordinateToRegions.get(p));
+				Polygon newHole = findBoundingPolygon(p, coordinateToRegions.get(p));
 				
-				EarClipper ec2 = new EarClipper(boundingPoly);
-				Geometry g = ec2.getResult();
+				System.out.println("remove=" + p);
+				System.out.println("newHole=" + newHole);
+				
+				EarClipper ec2 = new EarClipper(newHole);
+				Geometry trianglesOfNewHole = ec2.getResult();
 				
 				// Triangulate the resulting hole
-				for (int i = 0; i < g.getNumGeometries(); i++) {
-					newTriangles.add(g.getGeometryN(i));
+				for (int i = 0; i < trianglesOfNewHole.getNumGeometries(); i++) {
+					newTriangles.add(trianglesOfNewHole.getGeometryN(i));
 				}
 				
-				System.out.println("new trangles " + g);
+				System.out.println("new trangles " + trianglesOfNewHole);
 
 				oldTriangles = new ArrayList<Geometry>(coordinateToRegions.get(p));
 				oldTriangles.removeAll(newTriangles);
@@ -240,7 +235,14 @@ public class PointLocator {
 	 * @return
 	 */
 	public Polygon findBoundingPolygon(Coordinate p, List<Geometry> affectedRegions) {
-		return null;
+		// TODO: write a function that finds a bounding polygon
+		GeometryFactory fact = new GeometryFactory();		
+		Geometry regions = fact.buildGeometry(affectedRegions);
+		// TODO:
+		bound <- a concave hull of regions
+		LinearRing shell = fact.createLinearRing(coordsToLinearRingCoords(bound.getCoordinates()));
+
+		return new Polygon(shell, null, fact);
 	}
 
 	public Geometry lookup(double x, double y) {
@@ -293,6 +295,13 @@ public class PointLocator {
 
 		return null;
 
+	}
+	
+	private Coordinate[] coordsToLinearRingCoords(Coordinate[] origCoords) {
+		Coordinate[] linearRingCoords = new Coordinate[origCoords.length];
+		System.arraycopy(origCoords, 0, linearRingCoords, 0, origCoords.length);
+		linearRingCoords[linearRingCoords.length - 1] = origCoords[0];
+		return linearRingCoords;
 	}
 
 	public static void main(String[] args) throws ParseException {
