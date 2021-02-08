@@ -1,4 +1,4 @@
-# MithraCoverage 2
+# Coverage 2
 
 Coverage discovery for continuous data
 
