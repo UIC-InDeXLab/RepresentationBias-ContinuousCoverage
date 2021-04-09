@@ -3,7 +3,7 @@
 Coverage discovery for continuous data
 
 # Publications to cite:
-[1] Abolfazl Asudeh, Nima Shahbazi, Zhongjun Jin, H. V. Jagadish. Identifying Insufficient Data Coverage for Ordinal Continuous-Valued Attributes. SIGMOD, 2021, ACM.
+[1] Abolfazl Asudeh, Nima Shahbazi, Zhongjun Jin, H. V. Jagadish. **Identifying Insufficient Data Coverage for Ordinal Continuous-Valued Attributes**. SIGMOD, 2021, ACM.
 
 ## Getting Started
 
