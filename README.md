@@ -1,4 +1,4 @@
-# Coverage 2
+# ContinuousCoverage
 
 Coverage discovery for continuous data
 
