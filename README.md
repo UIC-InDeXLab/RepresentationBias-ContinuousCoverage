@@ -1,4 +1,4 @@
-# Representation Bias Identification (Continuous Coverage)
+# Representation Bias Identification
 
 ## Identifying Insufficient Data Coverage for Ordinal Continuous-Valued Attributes
 
