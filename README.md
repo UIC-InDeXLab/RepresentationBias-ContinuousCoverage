@@ -1,4 +1,4 @@
-# ContinuousCoverage
+# Representation Bias Identification (Continuous Coverage)
 
 Coverage discovery for continuous data
 
