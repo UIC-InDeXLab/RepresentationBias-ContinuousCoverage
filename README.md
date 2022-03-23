@@ -1,8 +1,12 @@
 # Representation Bias Identification (Continuous Coverage)
 
-Coverage discovery for continuous data
+## Identifying Insufficient Data Coverage for Ordinal Continuous-Valued Attributes
 
-# Publications to cite:
+## Abstract
+Appropriate training data is a requirement for building good machine-learned models. In this project, we study the notion of coverage for ordinal and continuous-valued attributes, by formalizing the intuition that the learned model can accurately predict only at data points for which there are "enough" similar data points in the training data set.
+We develop an efficient algorithm to identify uncovered regions in low-dimensional attribute feature space, by making a connection to Voronoi diagrams. We also develop a randomized approximation algorithm for use in high-dimensional attribute space. 
+
+## Publications to cite:
 [1] Abolfazl Asudeh, Nima Shahbazi, Zhongjun Jin, H. V. Jagadish. **Identifying Insufficient Data Coverage for Ordinal Continuous-Valued Attributes**. SIGMOD, 2021, ACM.
 
 ## Getting Started
