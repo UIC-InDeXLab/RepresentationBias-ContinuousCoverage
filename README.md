@@ -103,3 +103,5 @@ In Eclipse or other IDE, [run](https://help.eclipse.org/kepler/index.jsp?topic=%
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+
+<p align="center"><img width="20%" src="https://www.cs.uic.edu/~indexlab/imgs/InDeXLab2.gif"></p>
